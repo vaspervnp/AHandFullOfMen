@@ -60,6 +60,7 @@ render_frame:
   dec a
   jr nz,.e
 .icons:
+  call sprites_on               ; icons + cursor live in bank 4
   call draw_alert_icons
   call draw_cursor
   jp sprites_off
@@ -136,6 +137,11 @@ draw_entity:
   ld e,(ix+ent.gfx)
   ld d,(ix+ent.gfx+1)
   add hl,de
+  push bc
+  ld b,&7F                      ; page in this entity's sprite bank
+  ld c,(ix+ent.sbank)
+  out (c),c
+  pop bc
   pop bc
   ld d,SPR_W
   ld e,SPR_H
@@ -146,6 +152,9 @@ draw_entity:
 draw_decoy:
   call ent_screen_pos
   ret c
+  push bc
+  call sprites_on               ; the icon lives in bank 4
+  pop bc
   inc b                         ; centre the 4-byte icon in the 6-byte box
   ld a,c
   add a,SPR_H-CUR_H
@@ -159,6 +168,25 @@ draw_decoy:
 
 ; IX = entity -> A = sprite frame
 ent_frame:
+  ld a,(ix+ent.type)
+  cp ET_BARREL
+  jr nz,.not_barrel
+  xor a
+  ret
+.not_barrel:
+  cp ET_FX
+  jr nz,.person
+  ld a,(ix+ent.anim)            ; 3 ticks per explosion frame: 1..3
+  ld b,1
+.fx:
+  sub 3
+  jr c,.fx_done
+  inc b
+  jr .fx
+.fx_done:
+  ld a,b
+  ret
+.person:
   bit EF_DEAD,(ix+ent.flags)
   ld a,FR_CORPSE
   ret nz
@@ -282,6 +310,8 @@ sort_entities:
   ld a,(ix+ent.type)
   or a
   jr z,.skip
+  bit EF_BOARDED,(ix+ent.flags)
+  jr nz,.skip
   ; insert index C keyed by Y
   ld hl,draw_count
   ld b,(hl)

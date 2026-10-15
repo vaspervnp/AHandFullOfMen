@@ -55,6 +55,9 @@ mission_load:
   ld (ix+ent.gfx+1),a
   inc hl
   ld a,(hl)
+  ld (ix+ent.sbank),a
+  inc hl
+  ld a,(hl)
   ld (ix+ent.hp),a
   inc hl
   ld e,(hl)
@@ -91,6 +94,12 @@ mission_load:
   ld (sel_cmd),a
   ld (alarm),a
   ld (game_over),a
+  ld (tower_down),a
+  ld (sec_ticks),a
+  ld (mission_secs),a
+  ld (mission_secs+1),a
+  ld a,RIFLE_AMMO
+  ld (ammo),a
   ld a,SCR_W/2
   ld (cursor_x),a
   ld a,PLAY_H/2
@@ -115,40 +124,98 @@ mission_load:
   ld (hud_bg),a
   ret
 
-; Decide which cursor to show for what is under it.
+; Cursor shows the attack marker when the selected commando can attack
+; what is under it.
 update_cursor_frame:
   call cursor_world
   call ent_at
   ld a,0
   jr nc,.set
+  cp CMD_COUNT
+  ld a,0
+  jr c,.set
   ld a,(ix+ent.type)
-  cp ET_GUARD
+  ld (click_type),a
+  call sel_ent
+  call cmd_can_attack
   ld a,0
-  jr nz,.set
-  ld a,(sel_cmd)
-  cp CMD_BERET
-  ld a,0
-  jr nz,.set
-  inc a                         ; knife target
+  jr nc,.set
+  inc a
 .set:
   ld (cursor_frame),a
   ret
 
-; All commandos dead -> mission failed.
+; Win: tower down and every surviving commando aboard the truck.
+; Lose: the whole squad is dead (reinforcements are handled by clock_update).
+END_LOST        equ 0           ; end_reason values
+END_REINFORCED  equ 1
+END_ESCAPED     equ 2
+END_DELAY       equ 50          ; ticks before the debrief screen
+ALARM_SECONDS   equ 60
+
 check_end:
   ld a,(game_over)
   or a
   ret nz
+  ld bc,0                       ; B = alive, C = alive and on foot
   xor a
 .lp:
   push af
   call ent_ptr
   pop af
   bit EF_DEAD,(ix+ent.flags)
-  ret z                         ; someone is still alive
+  jr nz,.next
+  inc b
+  bit EF_BOARDED,(ix+ent.flags)
+  jr nz,.next
+  inc c
+.next:
   inc a
   cp CMD_COUNT
   jr nz,.lp
+  ld a,b
+  or a
+  ld a,END_LOST
+  jr z,end_fail
+  ld a,(tower_down)
+  or a
+  ret z
+  ld a,c
+  or a
+  ret nz
+  ld a,END_ESCAPED
+  ld (end_reason),a
+  ld a,2
+  jr end_set
+
+; A = end_reason
+end_fail:
+  ld (end_reason),a
   ld a,1
+end_set:
   ld (game_over),a
+  ld a,END_DELAY
+  ld (end_timer),a
+  call psg_init                 ; siren off
   jp hud_mark_dirty
+
+; Mission clock (seconds) and the alarm countdown.
+clock_update:
+  ld hl,sec_ticks
+  inc (hl)
+  ld a,(hl)
+  cp 25
+  ret c
+  ld (hl),0
+  ld hl,(mission_secs)
+  inc hl
+  ld (mission_secs),hl
+  ld a,(alarm)
+  or a
+  ret z
+  call hud_mark_dirty
+  ld hl,alarm_secs
+  dec (hl)
+  ret nz
+  ld a,END_REINFORCED
+  jr end_fail

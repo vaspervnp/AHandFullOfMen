@@ -70,6 +70,8 @@ ET_NONE         equ 0
 ET_COMMANDO     equ 1
 ET_GUARD        equ 2
 ET_DECOY        equ 3
+ET_BARREL       equ 4
+ET_FX           equ 5           ; explosion animation
 
 struct ent
 type    defb 0
@@ -91,7 +93,10 @@ ai      defb 0          ; guard AI state (AI_*)
 ai_timer defb 0
 ai_seen defb 0          ; entity index the guard is reacting to
 fire    defb 0          ; guard shot cooldown
-pad     defs 12
+sbank   defb 0          ; RAM config holding the sprite sheet (&C4/&C5)
+drag    defb 0          ; 1 + index of the entity being dragged
+fuse    defb 0          ; barrel chain-reaction countdown
+pad     defs 9
 endstruct
 ENT_SIZE        equ {sizeof}ent
   assert ENT_SIZE==32
@@ -101,6 +106,7 @@ EF_CRAWL        equ 0           ; bit numbers
 EF_MOVING       equ 1
 EF_DEAD         equ 2
 EF_SELECTED     equ 3
+EF_BOARDED      equ 4           ; commando is in the escape truck
 
 ; Entity states
 ST_IDLE         equ 0
@@ -128,6 +134,7 @@ KEY_SPACE       equ &57
 KEY_V           equ &67
 KEY_C           equ &76
 KEY_D           equ &75
+KEY_G           equ &64
 KEY_1           equ &80
 KEY_2           equ &81
 KEY_ESC         equ &82

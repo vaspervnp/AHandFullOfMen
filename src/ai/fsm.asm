@@ -96,7 +96,8 @@ ai_do_alarm:
   push ix
   pop iy
   pop ix
-  bit EF_DEAD,(iy+ent.flags)
+  ld a,(iy+ent.flags)
+  and (1<<EF_DEAD)|(1<<EF_BOARDED)
   jr nz,.retarget
   call face_target
   ld a,(ix+ent.fire)
@@ -135,37 +136,7 @@ raise_alarm:
   ld (ix+ent.ai),AI_ALARM
   ld (ix+ent.state),ST_IDLE
   ld (ix+ent.fire),FIRE_TICKS/2
-  ld a,(alarm)
-  or a
-  ret nz
-  ld a,1
-  ld (alarm),a
-  ld a,SFX_ALARM
-  call sfx_play
-  ; every other living guard joins the fight
-  push ix
-  ld a,GUARD_FIRST
-.all:
-  push af
-  call ent_ptr
-  ld a,(ix+ent.type)
-  cp ET_GUARD
-  jr nz,.skip
-  bit EF_DEAD,(ix+ent.flags)
-  jr nz,.skip
-  ld a,(ix+ent.ai)
-  cp AI_ALARM
-  jr z,.skip
-  ld (ix+ent.ai),AI_ALARM
-  ld (ix+ent.ai_seen),&FF
-  ld (ix+ent.state),ST_IDLE
-.skip:
-  pop af
-  inc a
-  cp MAX_ENTS
-  jr nz,.all
-  pop ix
-  jp hud_mark_dirty
+  jp alarm_all
 
 ; ---------------------------------------------------------------------------
 ; IX = guard. Looks for living commandos, then corpses of other guards.
@@ -200,7 +171,8 @@ guard_look:
   jr c,.found
   jr .next
 .cmd:
-  bit EF_DEAD,(iy+ent.flags)
+  ld a,(iy+ent.flags)
+  and (1<<EF_DEAD)|(1<<EF_BOARDED)
   jr nz,.next
   call guard_sees_iy
   jr c,.found
@@ -218,6 +190,11 @@ guard_look:
 
 ; IX = guard, IY = commando. Carry = seen (zone rules + LOS).
 guard_sees_iy:
+  ld b,(iy+ent.x)               ; underwater (the Marine) = invisible
+  ld c,(iy+ent.y)
+  call map_flags
+  and TF_WATER
+  ret nz                        ; NC: not seen
   bit EF_CRAWL,(iy+ent.flags)
   jr nz,guard_sees_iy_short
   ld a,LONG_R

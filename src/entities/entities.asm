@@ -44,8 +44,12 @@ ent_at:
   ld a,(ix+ent.type)
   or a
   jr z,.next
-  bit EF_DEAD,(ix+ent.flags)
+  ld a,(ix+ent.flags)
+  and (1<<EF_DEAD)|(1<<EF_BOARDED)
   jr nz,.next
+  ld a,(ix+ent.type)
+  cp ET_FX
+  jr z,.next
   ld a,b                        ; x in [ex-3, ex+2]
   sub (ix+ent.x)
   add a,3

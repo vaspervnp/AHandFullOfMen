@@ -23,10 +23,11 @@ On a real CPC or in an emulator: insert `build/handful_of_men.dsk` and type
 | Key | Action |
 | --- | --- |
 | Cursor keys / QAOP / joystick | move the crosshair (push against an edge to scroll) |
-| Space / Copy / Fire | select a commando, order a move, or (Green Beret) knife the guard under the cursor |
+| Space / Copy / Fire | select a commando, order a move, or attack what is under the cursor (knife, harpoon, rifle) |
 | Return / Fire 2, C | toggle crawling |
 | 1, 2, 3 | select Green Beret, Marine, Sniper |
 | D | Green Beret: drop the radio decoy, press again to make it ping |
+| G | Green Beret: grab / drop the barrel or body within reach |
 | V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
@@ -40,7 +41,7 @@ src/defs.asm             constants, entity struct, key codes
 src/crtc/                video init, palette, VSYNC interrupt
 src/render/              tile engine, masked blitter, renderer, HUD
 src/input/               keyboard matrix, joystick/QAOP, cursor
-src/entities/            entity helpers, commandos, guards
+src/entities/            entity helpers, commandos, guards, barrels/explosions/dragging
 src/ai/                  vision geometry + LOS, guard state machine, noise
 src/audio/               AY-3-8912 access, sound effects
 src/missions/            mission spawn and patrol data
@@ -56,7 +57,7 @@ tests/                   scripted-input scenarios + assertions
 | Range | Contents |
 | --- | --- |
 | `&0040-&3FFF` | code, tables, variables, stack |
-| `&4000-&7FFF` | tiles, font, portraits, mission map (RAM bank 4 with the sprite sheets is paged in here while blitting) |
+| `&4000-&7FFF` | tiles, font, title art, mission data, live map. Sprite banks 4 (Green Beret, guard, effects) and 5 (Marine, Sniper) are paged in here while blitting |
 | `&8000-&BFFF` | screen buffer B |
 | `&C000-&FFFF` | screen buffer A |
 
@@ -71,6 +72,20 @@ portraits procedurally. Blender/Aseprite renders replace them by keeping
 the same sheet layout and palette. `tools/png2cpc.py` converts sheets to
 Mode 0 data (masked sprites as mask/pixel byte pairs). `tools/map2asm.py`
 converts `assets/maps/*.txt`.
+
+## Mission 1: Baptism of Fire
+
+Destroy the radio tower inside the compound, then get every surviving
+commando into the truck at the road junction. Only a bullet sets off a
+barrel, and the blast must be close to the tower's base. Explosions raise
+the base alarm, and you then have 60 seconds before reinforcements arrive.
+Finishing without ever raising the alarm counts as a bonus objective.
+
+| Commando | Abilities |
+| --- | --- |
+| Tiny, Green Beret | knife (silent, melee), radio decoy, drags barrels and bodies |
+| Fins, Marine | swims, and can't be seen underwater; harpoon (silent, short range) |
+| Duke, Sniper | rifle: long range, needs a clear line of sight, 5 rounds, loud |
 
 ## Stealth rules
 

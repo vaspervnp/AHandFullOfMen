@@ -10,7 +10,8 @@
 ;   &C000-&FFFF  screen buffer A
 ;
 ; Outputs (paths relative to the build directory):
-;   code.bin  -> &0040     data.bin -> &4000     sprites.bin -> bank 4
+;   code.bin  -> &0040     data.bin -> &4000
+;   sprites.bin -> bank 4  sprites2.bin -> bank 5
 ;   handful.sna (when not TEST)
 ; ===========================================================================
 
@@ -81,12 +82,21 @@ main_loop:
   call cursor_update
   ld a,(game_over)
   or a
-  jr nz,.frozen
+  jr nz,.over
   call commandos_input
   call commandos_update
   call guards_update
+  call items_update
   call check_end
-.frozen:
+  call clock_update
+  jr .live
+.over:
+  ld hl,end_timer               ; let the last moment sink in, then debrief
+  dec (hl)
+  jr nz,.live
+  call debrief_run
+  jp title
+.live:
   call update_cursor_frame
   call cone_update
   call sfx_update
@@ -180,6 +190,7 @@ test_setup:
   include "entities/entities.asm"
   include "entities/commandos.asm"
   include "entities/guards.asm"
+  include "entities/items.asm"
   include "ai/los.asm"
   include "ai/fsm.asm"
   include "ai/sound_grid.asm"
@@ -214,7 +225,21 @@ keymap:         defs 10,&FF
 keymap_prev:    defs 10,&FF
 sel_cmd:        db 0
 alarm:          db 0
-game_over:      db 0
+game_over:      db 0           ; 0 playing, 1 failed, 2 accomplished
+end_reason:     db 0
+end_timer:      db 0
+tower_down:     db 0
+ammo:           db 0
+click_type:     db 0
+alarm_secs:     db 0
+sec_ticks:      db 0
+mission_secs:   dw 0
+num_buf:        defs 6
+deb_result_ink: db 0
+deb_result_ptr: dw 0
+deb_reason_ptr: dw 0
+page_prompt:    dw 0
+page_prompt_row: db 0
 click_target:   db 0
 ent_scan:       db 0
 step_block:     db 0
@@ -298,4 +323,18 @@ sprites_end:
 
   if TEST==0
   save "sprites.bin",sprites_start,sprites_end-sprites_start
+  endif
+
+; ---------------------------------------------------------------------------
+; RAM bank 5 (paged at &4000): Marine and Sniper sheets
+; ---------------------------------------------------------------------------
+  bank 5
+  org &4000
+sprites2_start:
+  include "sprites2.asm"        ; generated: build/sprites2.asm
+sprites2_end:
+  assert sprites2_end<=&8000
+
+  if TEST==0
+  save "sprites2.bin",sprites2_start,sprites2_end-sprites2_start
   endif

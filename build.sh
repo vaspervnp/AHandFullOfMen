@@ -17,6 +17,7 @@ rm -rf build && mkdir -p build
 # 2. Art assets -> Mode 0 data (assets/*.png are committed; regenerate the
 #    placeholders with tools/gen_art.py, or drop in Blender/Aseprite renders)
 python3 tools/png2cpc.py assets/sprites build/sprites.asm
+python3 tools/png2cpc.py assets/sprites2 build/sprites2.asm
 python3 tools/png2cpc.py assets/tiles build/tiles.asm
 python3 tools/png2cpc.py assets/ui build/ui.asm
 python3 tools/map2asm.py assets/maps/mission01.txt map_mission01 build/mission01_map.asm
@@ -39,6 +40,7 @@ cp loader.bin LOADER.BIN
 cp code.bin CODE.BIN
 cp data.bin DATA.BIN
 cp sprites.bin SPRITES.BIN
+cp sprites2.bin SPRITES2.BIN
 cp ../assets/disc/DISC.BAS DISC.BAS
 iDSK handful_of_men.dsk -i DISC.BAS -t 0 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i SPLASH.SCR -t 1 -e C000 -c C000 >/dev/null 2>&1
@@ -46,6 +48,7 @@ iDSK handful_of_men.dsk -i LOADER.BIN -t 1 -e 9000 -c 9000 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i CODE.BIN -t 1 -e 0040 -c 0040 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i DATA.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i SPRITES.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
+iDSK handful_of_men.dsk -i SPRITES2.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
 echo "build: handful_of_men.sna + handful_of_men.dsk ready in build/"
 
 # 6. Headless regression tests

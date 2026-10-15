@@ -1,0 +1,22 @@
+{
+  "sheets": [
+    {
+      "file": "marine.png",
+      "label": "spr_marine",
+      "cell": [
+        12,
+        16
+      ],
+      "kind": "masked"
+    },
+    {
+      "file": "sniper.png",
+      "label": "spr_sniper",
+      "cell": [
+        12,
+        16
+      ],
+      "kind": "masked"
+    }
+  ]
+}

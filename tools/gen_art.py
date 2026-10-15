@@ -107,6 +107,8 @@ class Look:
 
 BERET = Look(hat=TEAL, hat2=TEAL, uniform=GRN, shade=TEAL, pack=OLIVE, weapon=WHT)
 GUARD = Look(hat=GREY, hat2=GREY, uniform=OLIVE, shade=GREY, pack=RED, weapon=RED, helmet=True)
+MARINE = Look(hat=BLUE, hat2=BLUE, uniform=SKY, shade=BLUE, pack=GREY, weapon=GREY)
+SNIPER = Look(hat=OLIVE, hat2=OLIVE, uniform=RED, shade=OLIVE, pack=OLIVE, weapon=BLK)
 
 
 def legs_front(cv, lk, step):
@@ -281,6 +283,35 @@ def mirror(cv):
     return out
 
 
+def fx_sheet():
+    """12x16 masked cells: 0 barrel, 1-3 explosion."""
+    cells = []
+    cv = Canvas(12, 16)
+    cv.rect(4, 8, 7, 14, BRED)
+    cv.rect(4, 9, 7, 9, BYEL)
+    cv.rect(4, 12, 7, 12, BYEL)
+    cv.rect(5, 8, 5, 14, ORA)
+    cv.outline()
+    cells.append(cv)
+    for r, (c1, c2, c3) in enumerate(((BYEL, ORA, BRED), (PYEL, BYEL, ORA), (ORA, BRED, GREY))):
+        cv = Canvas(12, 16)
+        rad = 2 + r * 2
+        cx, cy = 5.5, 15 - rad * 1.2
+        random.seed(30 + r)
+        for y in range(16):
+            for x in range(12):
+                d = ((x - cx) * 2) ** 2 + (y - cy) ** 2   # 2:1 pixels
+                if d <= (rad * 2) ** 2 * (0.8 + 0.4 * random.random()):
+                    cv.set(x, y, c1 if d < (rad * 0.8) ** 2 * 4 else (c2 if d < (rad * 1.5) ** 2 * 4 else c3))
+        if r == 2:
+            for y in range(0, 8):
+                for x in range(3, 9):
+                    if random.random() < 0.4:
+                        cv.set(x, y, GREY)
+        cells.append(cv)
+    return cells
+
+
 def cursor_sheet():
     cells = []
     # 0 crosshair
@@ -340,6 +371,8 @@ TILE_NAMES = [
     "pine0", "pine1", "pine2", "pine3", "pine4", "pine5",          # 2x3 stamp
     "tower0", "tower1", "tower2", "tower3", "tower4", "tower5", "tower6", "tower7",  # 2x4
     "rubble", "gate", "hud_bg", "hud_edge",
+    "truck0", "truck1", "truck2", "truck3", "truck4", "truck5",     # 3x2 stamp
+    "scorch",
 ]
 
 
@@ -521,6 +554,42 @@ def make_tiles():
         cv.set(x - 1 if x < 4 else x + 1, 4, WHT)
     cv.rect(0, 2, 0, 7, BLK)
     tiles["gate"] = cv
+    # Escape truck, 24x16, facing west
+    big = Canvas(24, 16, T)
+    big.rect(8, 1, 23, 10, OLIVE)                # canvas cover
+    for x in range(10, 23, 4):
+        big.rect(x, 1, x, 10, GREY)
+    big.rect(1, 5, 7, 11, OLIVE)                 # cab
+    big.rect(2, 6, 4, 8, SKY)                    # windscreen
+    big.rect(0, 9, 23, 11, OLIVE)
+    big.rect(0, 11, 23, 11, BLK)
+    for wx in (3, 15, 19):
+        big.rect(wx, 12, wx + 2, 14, BLK)
+        big.set(wx + 1, 13, GREY)
+    big.outline()
+    ground = Canvas(24, 16, SNOWSH)
+    random.seed(13)
+    for y in range(16):
+        for x in range(24):
+            r = random.random()
+            if r < 0.12:
+                ground.set(x, y, GREY)
+            elif r < 0.2:
+                ground.set(x, y, WHT)
+    ground.paste(big, 0, 0)
+    for i in range(6):
+        tx, ty = i % 3, i // 3
+        cv = Canvas(8, 8)
+        for y in range(8):
+            for x in range(8):
+                cv.px[y][x] = ground.px[ty * 8 + y][tx * 8 + x]
+        tiles[f"truck{i}"] = cv
+    cv = snow_tile(14, 0.05)
+    cv.rect(1, 2, 6, 6, GREY)
+    cv.rect(2, 1, 5, 7, GREY)
+    cv.rect(2, 3, 5, 5, BLK)
+    cv.set(4, 4, ORA)
+    tiles["scorch"] = cv
     tiles["hud_bg"] = Canvas(8, 8, BBLU)
     cv = Canvas(8, 8, BBLU)
     cv.rect(0, 0, 7, 0, PYEL)
@@ -678,10 +747,18 @@ def main():
     save_sheet(sprite_sheet(BERET), os.path.join(ASSETS, "sprites", "beret.png"))
     save_sheet(sprite_sheet(GUARD), os.path.join(ASSETS, "sprites", "guard.png"))
     save_sheet(cursor_sheet(), os.path.join(ASSETS, "sprites", "cursor.png"))
+    save_sheet(fx_sheet(), os.path.join(ASSETS, "sprites", "fx.png"))
+    save_sheet(sprite_sheet(MARINE), os.path.join(ASSETS, "sprites2", "marine.png"))
+    save_sheet(sprite_sheet(SNIPER), os.path.join(ASSETS, "sprites2", "sniper.png"))
+    write_manifest("sprites2", [
+        {"file": "marine.png", "label": "spr_marine", "cell": [12, 16], "kind": "masked"},
+        {"file": "sniper.png", "label": "spr_sniper", "cell": [12, 16], "kind": "masked"},
+    ])
     write_manifest("sprites", [
         {"file": "beret.png", "label": "spr_beret", "cell": [12, 16], "kind": "masked"},
         {"file": "guard.png", "label": "spr_guard", "cell": [12, 16], "kind": "masked"},
         {"file": "cursor.png", "label": "spr_cursor", "cell": [8, 8], "kind": "masked"},
+        {"file": "fx.png", "label": "spr_fx", "cell": [12, 16], "kind": "masked"},
     ])
     save_sheet(make_tiles(), os.path.join(ASSETS, "tiles", "norway.png"), cols=8)
     write_manifest("tiles", [

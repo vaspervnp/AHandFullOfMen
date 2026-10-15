@@ -13,8 +13,8 @@ import cpcsim  # noqa: E402
 
 ENT_SIZE = 32
 ENT = {"type": 0, "x": 1, "y": 2, "dir": 3, "state": 5, "tx": 6, "ty": 7, "flags": 8,
-       "hp": 14, "ai": 16}
-EF_CRAWL, EF_DEAD = 1, 4
+       "hp": 14, "ai": 16, "drag": 21}
+EF_CRAWL, EF_DEAD, EF_BOARDED = 1, 4, 16
 
 
 class Run:
@@ -93,6 +93,40 @@ def check_t10_decoy(r):
     assert r.ent(3, "ai") == 1, f"guard AI {r.ent(3, 'ai')}, expected INVESTIGATE"
     x, y = r.ent(3, "x"), r.ent(3, "y")
     assert abs(x - 50) <= 2 and abs(y - 170) <= 2, f"guard at {x},{y}, decoy at 50,170"
+
+
+def check_t11_tower(r):
+    assert r.byte("tower_down") == 1, "radio tower still standing"
+    assert r.byte("alarm") == 1, "an explosion must raise the alarm"
+    assert r.ent(8, "type") == 0, "barrel should be gone"
+    assert r.byte("ammo") == 4, f"ammo {r.byte('ammo')}, expected 4"
+    assert not r.ent(2, "flags") & EF_DEAD, "the Sniper was caught in his own blast"
+
+
+def check_t12_drag(r):
+    assert r.ent(0, "drag") == 10, f"drag={r.ent(0, 'drag')}, expected barrel 9+1"
+    assert r.ent(9, "x") < 60, f"barrel x={r.ent(9, 'x')}, should have moved west"
+
+
+def check_t13_escape(r):
+    assert r.ent(0, "flags") & EF_BOARDED, "Green Beret did not board the truck"
+    assert r.byte("game_over") == 2, f"game_over={r.byte('game_over')}, expected 2"
+    assert r.byte("end_reason") == 2
+
+
+def check_t14_harpoon(r):
+    assert r.ent(3, "flags") & EF_DEAD, "harpoon missed"
+    assert r.byte("alarm") == 0, "harpoon must be silent"
+
+
+def check_t15_reinforced(r):
+    assert r.byte("game_over") == 1 and r.byte("end_reason") == 1, \
+        f"game_over={r.byte('game_over')} reason={r.byte('end_reason')}"
+
+
+def check_t16_debrief(r):
+    assert r.cpc.crtc[12] == 0x30, "debrief should be on the &C000 screen"
+    assert r.byte("game_over") == 2
 
 
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}

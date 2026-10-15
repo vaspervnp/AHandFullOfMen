@@ -5,6 +5,8 @@
 
 TILE_RUBBLE     equ 32
 TILE_TOWER0     equ 24
+TILE_SNOW       equ 0
+TILE_SCORCH     equ 42
 
 tile_attrs:
   db TF_SNOW                    ; 0  snow
@@ -43,3 +45,10 @@ tile_attrs:
   db 0                          ; 33 gate (barrier raised)
   db TF_SOLID                   ; 34 hud_bg
   db TF_SOLID                   ; 35 hud_edge
+  db TF_OPAQUE                  ; 36 truck0 (walk in to board)
+  db TF_OPAQUE                  ; 37 truck1
+  db TF_OPAQUE                  ; 38 truck2
+  db TF_OPAQUE                  ; 39 truck3
+  db TF_OPAQUE                  ; 40 truck4
+  db TF_OPAQUE                  ; 41 truck5
+  db 0                          ; 42 scorch

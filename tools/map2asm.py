@@ -20,8 +20,9 @@ LEGEND = {
     "~": "water", "n": "bank_n", "u": "bank_s", "R": "rock", "-": "fence_h",
     "|": "fence_v", "W": "wall", "r": "roof", "e": "roof_edge", "D": "door",
     "b": "bridge", "s": "sandbag", "t": "tracks", "x": "rubble", "G": "gate",
+    "#": "scorch",
 }
-STAMPS = {"P": ("pine", 2, 3), "X": ("tower", 2, 4)}
+STAMPS = {"P": ("pine", 2, 3), "X": ("tower", 2, 4), "K": ("truck", 3, 2)}
 
 
 def main():

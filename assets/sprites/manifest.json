@@ -26,6 +26,15 @@
         8
       ],
       "kind": "masked"
+    },
+    {
+      "file": "fx.png",
+      "label": "spr_fx",
+      "cell": [
+        12,
+        16
+      ],
+      "kind": "masked"
     }
   ]
 }

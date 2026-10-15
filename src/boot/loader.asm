@@ -5,6 +5,7 @@
 ; the game in with the AMSDOS cassette-vector calls:
 ;   CODE.BIN    -> &0040 (base RAM)
 ;   SPRITES.BIN -> &4000 with RAM bank 4 paged in (&7FC4)
+;   SPRITES2.BIN-> &4000 with RAM bank 5 paged in (&7FC5)
 ;   DATA.BIN    -> &4000 (base RAM)
 ; then stop the drive motor, take over the machine and jump to the game.
 ; ===========================================================================
@@ -22,6 +23,11 @@ loader:
   ld bc,&7FC4
   out (c),c
   ld hl,fn_sprites
+  ld de,&4000
+  call load_file
+  ld bc,&7FC5
+  out (c),c
+  ld hl,fn_sprites2
   ld de,&4000
   call load_file
   ld bc,&7FC0
@@ -56,4 +62,5 @@ load_file:
 
 fn_code:    db "CODE    .BIN"
 fn_sprites: db "SPRITES .BIN"
+fn_sprites2:db "SPRITES2.BIN"
 fn_data:    db "DATA    .BIN"

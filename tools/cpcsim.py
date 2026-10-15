@@ -247,7 +247,9 @@ def main():
           f"R12={cpc.crtc[12]:02X} ram=C{cpc.ram_cfg:X}")
     for p in a.peek:
         name, _, ln = p.partition(":")
-        addr = syms[name.lower()] if name.lower() in syms else int(name, 16)
+        base, _, off = name.partition("+")
+        addr = syms[base.lower()] if base.lower() in syms else int(base, 16)
+        addr += int(off, 0) if off else 0
         n = int(ln, 0) if ln else 16
         print(f"{name} @{addr:04X}: " + " ".join(f"{b:02X}" for b in cpc.base_ram(addr, n)))
     if cpc.samples:

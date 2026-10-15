@@ -106,6 +106,13 @@ hud_contents:
   ld hl,txt_dead
   bit EF_DEAD,(ix+ent.flags)
   jr nz,.mode
+  ld hl,txt_truck
+  bit EF_BOARDED,(ix+ent.flags)
+  jr nz,.mode
+  ld hl,txt_drag
+  ld a,(ix+ent.drag)
+  or a
+  jr nz,.mode
   ld hl,txt_crawl
   bit EF_CRAWL,(ix+ent.flags)
   jr nz,.mode
@@ -115,19 +122,51 @@ hud_contents:
   ld c,20
   call print_at
 
+  ; weapon line
+  ld a,(sel_cmd)
+  ld hl,txt_kit_beret
+  or a
+  jr z,.kit
+  ld hl,txt_kit_marine
+  dec a
+  jr z,.kit
+  ld a,(ammo)                   ; "RIFLE  n ROUNDS"
+  call num2
+  ld a,(num_buf+1)
+  ld (txt_kit_sniper_n),a
+  ld hl,txt_kit_sniper
+.kit:
+  ld b,TEXT_X
+  ld c,21
+  call print_at
+
   ld hl,txt_objective
+  ld a,(tower_down)
+  or a
+  jr z,.obj
+  ld hl,txt_objective2
+.obj:
   ld b,TEXT_X
   ld c,22
   call print_at
 
   ld a,(game_over)
   or a
+  jr z,.playing
+  ld hl,txt_done
+  cp 2
+  jr z,.st
   ld hl,txt_failed
-  jr nz,.red
+  jr .red
+.playing:
   ld a,(alarm)
   or a
   ld hl,txt_quiet
   jr z,.st
+  ld a,(alarm_secs)             ; "ALARM! nn"
+  call num2
+  ld hl,(num_buf)
+  ld (txt_alarm_n),hl
   ld hl,txt_alarm
 .red:
   push hl
@@ -138,6 +177,21 @@ hud_contents:
   ld b,TEXT_X
   ld c,23
   jp print_at
+
+; A = 0..99 -> num_buf = two ASCII digits (leading zero kept)
+num2:
+  ld b,'0'-1
+.tens:
+  inc b
+  sub 10
+  jr nc,.tens
+  add a,'0'+10
+  ld c,a
+  ld a,b
+  ld (num_buf),a
+  ld a,c
+  ld (num_buf+1),a
+  ret
 
 ; A = commando index (0..2)
 hud_portrait:
@@ -502,10 +556,19 @@ cmd_names:
 txt_beret:      db "TINY - GREEN BERET    ",0
 txt_marine:     db "FINS - MARINE         ",0
 txt_sniper:     db "DUKE - SNIPER         ",0
-txt_stand:      db "STANDING   ",0
-txt_crawl:      db "CRAWLING   ",0
-txt_dead:       db "K.I.A.     ",0
+txt_stand:      db "STANDING     ",0
+txt_crawl:      db "CRAWLING     ",0
+txt_dead:       db "K.I.A.       ",0
+txt_truck:      db "IN THE TRUCK ",0
+txt_drag:       db "DRAGGING     ",0
+txt_kit_beret:  db "KNIFE  DECOY  ",0
+txt_kit_marine: db "HARPOON  SCUBA",0
+txt_kit_sniper: db "RIFLE  "
+txt_kit_sniper_n: db "5 SHOTS",0
 txt_objective:  db "DESTROY RADIO TOWER",0
-txt_quiet:      db "ALL QUIET      ",0
-txt_alarm:      db "ALARM!         ",0
-txt_failed:     db "MISSION FAILED ",0
+txt_objective2: db "GET TO THE TRUCK!  ",0
+txt_quiet:      db "ALL QUIET       ",0
+txt_alarm:      db "ALARM! "
+txt_alarm_n:    db "60      ",0
+txt_done:       db "MISSION COMPLETE",0
+txt_failed:     db "MISSION FAILED  ",0
