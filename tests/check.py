@@ -79,6 +79,22 @@ def check_t07_menu_screen(r):
     assert len(set(top)) > 2, "title banner missing"
 
 
+def check_t08_cone(r):
+    assert r.byte("cone_guard") == 3, f"cone_guard={r.byte('cone_guard')}"
+    n = r.byte("cone_count")
+    assert 20 < n <= 9 * 16, f"cone has {n} dots"
+
+
+def check_t09_footsteps(r):
+    assert r.ent(3, "ai") != 0, "sentry did not react to footsteps on snow"
+
+
+def check_t10_decoy(r):
+    assert r.ent(3, "ai") == 1, f"guard AI {r.ent(3, 'ai')}, expected INVESTIGATE"
+    x, y = r.ent(3, "x"), r.ent(3, "y")
+    assert abs(x - 50) <= 2 and abs(y - 170) <= 2, f"guard at {x},{y}, decoy at 50,170"
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

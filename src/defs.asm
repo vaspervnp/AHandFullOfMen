@@ -69,6 +69,7 @@ MAX_ENTS        equ 16
 ET_NONE         equ 0
 ET_COMMANDO     equ 1
 ET_GUARD        equ 2
+ET_DECOY        equ 3
 
 struct ent
 type    defb 0
@@ -126,6 +127,7 @@ KEY_K           equ &45
 KEY_SPACE       equ &57
 KEY_V           equ &67
 KEY_C           equ &76
+KEY_D           equ &75
 KEY_1           equ &80
 KEY_2           equ &81
 KEY_ESC         equ &82

@@ -1,7 +1,7 @@
 ; Boot: mission loads, both buffers render, HUD shows. Idle 40 ticks.
 TEST equ 1
 macro SCENARIO
-  db 40, 0
+  db 40, 0, &FF
 mend
 macro SETUP
 mend

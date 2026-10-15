@@ -26,6 +26,8 @@ On a real CPC or in an emulator: insert `build/handful_of_men.dsk` and type
 | Space / Copy / Fire | select a commando, order a move, or (Green Beret) knife the guard under the cursor |
 | Return / Fire 2, C | toggle crawling |
 | 1, 2, 3 | select Green Beret, Marine, Sniper |
+| D | Green Beret: drop the radio decoy, press again to make it ping |
+| V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
 The title menu lists these shortcuts too. Space or Fire starts the mission.
@@ -39,7 +41,7 @@ src/crtc/                video init, palette, VSYNC interrupt
 src/render/              tile engine, masked blitter, renderer, HUD
 src/input/               keyboard matrix, joystick/QAOP, cursor
 src/entities/            entity helpers, commandos, guards
-src/ai/                  vision geometry + LOS, guard state machine
+src/ai/                  vision geometry + LOS, guard state machine, noise
 src/audio/               AY-3-8912 access, sound effects
 src/missions/            mission spawn and patrol data
 src/menu.asm             title menu (banner + keyboard shortcuts)
@@ -69,6 +71,17 @@ portraits procedurally. Blender/Aseprite renders replace them by keeping
 the same sheet layout and palette. `tools/png2cpc.py` converts sheets to
 Mode 0 data (masked sprites as mask/pixel byte pairs). `tools/map2asm.py`
 converts `assets/maps/*.txt`.
+
+## Stealth rules
+
+- Guards see in a 60° cone. In the close zone they spot anything,
+  including crawling commandos and bodies. In the far zone they only spot
+  commandos standing up. Trees, rocks and buildings block their view.
+- A spotted commando gets 1.5 s of grace (`!`). After that the guard opens
+  fire, the siren sounds, and every guard joins the fight.
+- Walking upright on snow is audible nearby. Guards come to investigate
+  (`?`) for about 10 s, then go back to their patrol. The decoy draws guards
+  from further away and holds them for about 25 s.
 
 ## Tests
 

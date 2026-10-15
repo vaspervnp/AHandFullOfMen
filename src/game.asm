@@ -95,13 +95,24 @@ mission_load:
   ld (cursor_x),a
   ld a,PLAY_H/2
   ld (cursor_y),a
-  xor a                         ; nothing to restore yet
-  ld (rects_c0),a
-  ld (rects_80),a
+  xor a
   ld (tick),a
+  ld (cone_count),a
+  dec a                         ; &FF: no cone shown or pinned
+  ld (cone_pinned),a
+  ld (cone_guard),a
+  ld (cone_key),a
+  ld hl,cone_tiles              ; full redraw follows: forget old cone tiles
+  ld b,DIRTY_SIZE
+  xor a
+.ct:
+  ld (hl),a
+  inc hl
+  djnz .ct
   ld a,3
   ld (view_dirty),a
   ld (hud_dirty),a
+  ld (hud_bg),a
   ret
 
 ; Decide which cursor to show for what is under it.
@@ -110,9 +121,10 @@ update_cursor_frame:
   call ent_at
   ld a,0
   jr nc,.set
-  cp CMD_COUNT
+  ld a,(ix+ent.type)
+  cp ET_GUARD
   ld a,0
-  jr c,.set
+  jr nz,.set
   ld a,(sel_cmd)
   cp CMD_BERET
   ld a,0

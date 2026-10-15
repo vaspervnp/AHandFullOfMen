@@ -110,16 +110,24 @@ draw_view:
   jr nz,.row
   ret
 
-; Redraw the tiles under a screen rectangle (already clipped to the view).
+; ---------------------------------------------------------------------------
+; Dirty tiles. Each screen buffer has a bitmap of the 20x18 view tiles that
+; something was drawn over (3 bytes per row, bit n = column 8k+n). Next time
+; that buffer is the back buffer, exactly those tiles are redrawn.
+; ---------------------------------------------------------------------------
+DIRTY_ROW       equ 3
+DIRTY_SIZE      equ DIRTY_ROW*VIEW_TH
+
+; Mark the tiles under a screen rectangle (clipped to the view).
 ; B = x byte, C = y line, D = width bytes, E = height lines
-restore_rect:
+mark_rect:
   ld a,b
   add a,d
   dec a
   rrca
   rrca
   and &3F
-  ld (.tx1+1),a                 ; last column
+  ld d,a                        ; last column
   ld a,c
   add a,e
   dec a
@@ -127,13 +135,13 @@ restore_rect:
   rrca
   rrca
   and &1F
-  ld (.ty1+1),a                 ; last row
+  ld e,a                        ; last row
   ld a,b
   rrca
   rrca
   and &3F
   ld b,a                        ; first column
-  ld (.tx0+1),a
+  ld (.col0+1),a
   ld a,c
   rrca
   rrca
@@ -141,11 +149,119 @@ restore_rect:
   and &1F
   ld c,a                        ; first row
 .row:
-.tx0:
+.col0:
   ld b,0
 .col:
+  push de
+  call mark_tile
+  pop de
+  ld a,b
+  inc b
+  cp d
+  jr nz,.col
+  ld a,c
+  inc c
+  cp e
+  jr nz,.row
+  ret
+
+; B = view column, C = view row. Preserves BC.
+mark_tile:
+  ld hl,(cur_dirty)
+  ld a,c
+  add a,a
+  add a,c
+  ld e,a
+  ld a,b
+  rrca
+  rrca
+  rrca
+  and &1F
+  add a,e
+  add a,l
+  ld l,a
+  jr nc,.nc
+  inc h
+.nc:
+  ld a,b
+  and 7
+  ld e,a
+  ld d,0
+  push hl
+  ld hl,bit_tab
+  add hl,de
+  ld a,(hl)
+  pop hl
+  or (hl)
+  ld (hl),a
+  ret
+
+bit_tab:
+  db 1,2,4,8,16,32,64,128
+
+; Redraw and clear every marked tile of the back buffer.
+restore_dirty:
+  ld hl,(cur_dirty)
+  ld c,0
+.row:
+  ld b,0
+  ld e,DIRTY_ROW
+.byte:
+  ld a,(hl)
+  or a
+  jr z,.skip8
+  ld (hl),0
+  push hl
+  push de
+  ld d,a
+.bit:
+  srl d
+  jr nc,.clean
   push bc
-  ; map tile at (cam_x + b, cam_y + c)
+  push de
+  call redraw_view_tile
+  pop de
+  pop bc
+.clean:
+  inc b
+  ld a,d
+  or a
+  jr nz,.bit
+  pop de
+  pop hl
+  ld a,b                        ; round B up to the next group of 8
+  dec a
+  or 7
+  inc a
+  ld b,a
+  jr .next
+.skip8:
+  ld a,b
+  add a,8
+  ld b,a
+.next:
+  inc hl
+  dec e
+  jr nz,.byte
+  inc c
+  ld a,c
+  cp VIEW_TH
+  jr nz,.row
+  ret
+
+; Clear the back buffer's dirty map (after a full redraw).
+clear_dirty:
+  ld hl,(cur_dirty)
+  ld b,DIRTY_SIZE
+  xor a
+.lp:
+  ld (hl),a
+  inc hl
+  djnz .lp
+  ret
+
+; Redraw view tile (B, C) from the map into the back buffer.
+redraw_view_tile:
   ld a,(cam_y)
   add a,c
   ld l,a
@@ -170,19 +286,7 @@ restore_rect:
   push de
   call tile_gfx
   pop de
-  call draw_tile_de
-  pop bc
-  ld a,b
-  inc b
-.tx1:
-  cp 0
-  jr nz,.col
-  ld a,c
-  inc c
-.ty1:
-  cp 0
-  jr nz,.row
-  ret
+  jp draw_tile_de
 
 ; ---------------------------------------------------------------------------
 ; Map queries (world coordinates)

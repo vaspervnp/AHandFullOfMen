@@ -9,6 +9,6 @@ macro SETUP
   ld (ix+ent.state),ST_IDLE
 mend
 macro SCENARIO
-  db 70, 0
+  db 70, 0, &FF
 mend
   include "main.asm"

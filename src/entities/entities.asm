@@ -2,19 +2,32 @@
 ; Entity table helpers and shared movement
 ; ===========================================================================
 
-; A = entity index -> IX = entity
+; A = entity index -> IX = entity (preserves all other registers + flags)
 ent_ptr:
-  push de
-  ld e,a
-  ld d,0
-  ld ix,ent_table
-  repeat 5                      ; ENT_SIZE = 32
-  sla e
-  rl d
-  rend
-  add ix,de
-  pop de
+  push hl
+  push af
+  add a,a
+  add a,ent_addr and &FF        ; table never crosses a page (asserted)
+  ld l,a
+  ld h,ent_addr>>8
+  ld a,(hl)
+  inc l
+  ld h,(hl)
+  ld l,a
+  push hl
+  pop ix
+  pop af
+  pop hl
   ret
+
+  align 32                      ; 32-byte table: never crosses a page
+ent_addr:
+i=0
+  repeat MAX_ENTS
+  dw ent_table+i*ENT_SIZE
+i=i+1
+  rend
+  assert (ent_addr and &FF00)==((ent_addr+MAX_ENTS*2-1) and &FF00)
 
 ; IX = selected commando
 sel_ent:

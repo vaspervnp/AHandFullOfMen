@@ -18,6 +18,6 @@ macro SETUP
   set EF_CRAWL,(ix+ent.flags)
 mend
 macro SCENARIO
-  db 70, 0
+  db 70, 0, &FF
 mend
   include "main.asm"

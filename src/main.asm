@@ -88,6 +88,7 @@ main_loop:
   call check_end
 .frozen:
   call update_cursor_frame
+  call cone_update
   call sfx_update
   ld hl,tick
   inc (hl)
@@ -96,7 +97,7 @@ main_loop:
   jr main_loop
 
   if TEST
-; Scripted input for headless regression tests: (ticks, joy_state) pairs
+; Scripted input for headless regression tests: (ticks, joy_state, key)
 ; from the scenario's SCENARIO macro (tests/tNN_*.asm). When the script
 ; runs out we jump to &0000, where CAP32_WAITBREAK / cpcsim stop.
 test_input:
@@ -107,6 +108,10 @@ test_input:
   inc hl
   ld a,(hl)
   ld (joy_state),a
+  inc hl
+  ld a,(hl)                     ; key held during this step, &FF = none
+  cp &FF
+  call nz,test_press
   ld hl,test_count
   inc (hl)
   ld a,(hl)
@@ -117,7 +122,34 @@ test_input:
   ld (test_count),a
   inc hl
   inc hl
+  inc hl
   ld (test_ptr),hl
+  ret
+; A = key code: clear its bit in the freshly scanned matrix
+test_press:
+  ld c,a
+  rrca
+  rrca
+  rrca
+  rrca
+  and &0F
+  ld hl,keymap
+  add a,l
+  ld l,a
+  jr nc,.nc
+  inc h
+.nc:
+  ld a,c
+  and 7
+  ld b,a
+  ld a,&FE
+  jr z,.clr
+.rot:
+  rlca
+  djnz .rot
+.clr:
+  and (hl)
+  ld (hl),a
   ret
 test_ptr: dw test_script
 test_count: db 0
@@ -144,11 +176,13 @@ test_setup:
   include "render/sprites.asm"
   include "render/render.asm"
   include "render/hud.asm"
+  include "render/vision_cone.asm"
   include "entities/entities.asm"
   include "entities/commandos.asm"
   include "entities/guards.asm"
   include "ai/los.asm"
   include "ai/fsm.asm"
+  include "ai/sound_grid.asm"
   include "audio/psg.asm"
   include "audio/sfx.asm"
   include "game.asm"
@@ -198,7 +232,7 @@ los_dx:         dw 0
 los_dy:         dw 0
 bl_src:         dw 0
 bl_fullw:       db 0
-cur_rects:      dw 0
+cur_dirty:      dw 0
 hp_idx:         db 0
 hp_x:           db 0
 hp_frame:       db 0
@@ -206,11 +240,31 @@ hp_hp:          db 0
 text_pairs:     defs 4
 text_paper:     db PEN_HUD
 menu_blink:     db 0
+hud_bg:         db 0
+cone_guard:     db CONE_NONE
+cone_pinned:    db CONE_NONE
+cone_key:       defs 6,&FF
+cone_step:      db 0
+cone_tiles:     defs DIRTY_SIZE
+cone_count:     db 0
+cone_ang:       db 0
+cone_cx:        db 0
+cone_cy:        db 0
+cone_wr:        dw 0
+cone_dx:        dw 0
+cone_dy:        dw 0
+cone_fx:        dw 0
+cone_fy:        dw 0
+cone_buf:       defs CONE_RAYS*CONE_STEPS*3
+noise_x:        db 0
+noise_y:        db 0
+noise_r:        db 0
+noise_t:        db 0
 draw_count:     db 0
 draw_list:      defs MAX_ENTS
 ent_route:      defs MAX_ENTS*2
-rects_c0:       defs 1+MAX_RECTS*4
-rects_80:       defs 1+MAX_RECTS*4
+dirty_c0:       defs DIRTY_SIZE
+dirty_80:       defs DIRTY_SIZE
 ent_table:      defs MAX_ENTS*ENT_SIZE
 code_end:
   assert code_end<&3C00         ; leave 1K for the stack

@@ -315,6 +315,15 @@ def cursor_sheet():
     cv.set(3, 6, BYEL)
     cv.outline(BLK)
     cells.append(cv)
+    # 4 radio decoy
+    cv = Canvas(8, 8)
+    cv.rect(2, 3, 5, 6, OLIVE)
+    cv.rect(3, 4, 4, 4, BYEL)
+    cv.set(5, 1, GREY)
+    cv.set(5, 2, GREY)
+    cv.set(5, 0, BRED)
+    cv.outline()
+    cells.append(cv)
     return cells
 
 

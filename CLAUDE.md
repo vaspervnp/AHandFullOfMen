@@ -4,6 +4,12 @@
   quick loop: `./build.sh --no-test && tests/run_tests.sh --no-cap32`.
 - Debug a scenario: `cd build && python3 ../tools/cpcsim.py tests/t01_boot.sna
   --sym tests/t01_boot.sym --peek tick:2 --trace 40 --screen out.png`.
+- Profile: `cpcsim.py ... --profile 30` samples the PC after frame 30 and
+  prints a per-routine breakdown. Frames per game tick (target 2 = 25 Hz):
+  `--peek tick:1`, then compare against `frames=`.
+- Test scripts are `db ticks, joy_bits, key` (key = matrix code or &FF), with
+  a `SETUP` macro (required, may be empty) run after mission_load to stage
+  entities.
 
 ## rasm gotchas
 - Always pass `-amper` (`&` hex). Then `and`/`or`/`xor`/`mod` are the

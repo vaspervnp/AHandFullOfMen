@@ -100,8 +100,10 @@ txt_menu_start:
   db 16, PEN_TEXT,   "SPACE / COPY / FIRE SELECT, GO, KILL",0
   db 17, PEN_TEXT,   "RETURN / C          CRAWL OR STAND  ",0
   db 18, PEN_TEXT,   "1  2  3             PICK COMMANDO   ",0
-  db 19, PEN_TEXT,   "SCREEN EDGE         SCROLL THE MAP  ",0
-  db 20, PEN_TEXT,   "ESC                 BACK TO MENU    ",0
-  db 22, PEN_SNOW,   "JOYSTICK WORKS TOO. STAY OUT OF SIGHT!",0
+  db 19, PEN_TEXT,   "D                   DECOY: DROP/PING",0
+  db 20, PEN_TEXT,   "V  (OR POINT AT)    GUARD VIEW CONE ",0
+  db 21, PEN_TEXT,   "SCREEN EDGE         SCROLL THE MAP  ",0
+  db 22, PEN_TEXT,   "ESC                 BACK TO MENU    ",0
+  db 23, PEN_SNOW,   "JOYSTICK WORKS TOO. STAY OUT OF SIGHT!",0
   db 24, PEN_SNOW,   "REVIVE8BIT 2026",0
   db &FF

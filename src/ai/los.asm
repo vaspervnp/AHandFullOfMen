@@ -11,7 +11,11 @@ VIS_MAX         equ 127         ; clamp for visual components
 ; IX = observer, IY = target -> vis_vx, vis_vy (signed visual units)
 ; Returns carry set if the target is out of range (any |component| > 127).
 vis_vector:
-  ld a,(iy+ent.x)
+  ld b,(iy+ent.x)
+  ld c,(iy+ent.y)
+; Same, toward world point (B, C)
+vis_vector_pt:
+  ld a,b
   sub (ix+ent.x)
   jr c,.xneg
   cp 32
@@ -28,7 +32,7 @@ vis_vector:
   neg
 .xset:
   ld (vis_vx),a
-  ld a,(iy+ent.y)
+  ld a,c
   sub (ix+ent.y)
   jr c,.yneg
   cp VIS_MAX+1

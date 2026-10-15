@@ -68,11 +68,13 @@ class CPC:
         self.psg = [0] * 16
         self.keys_down = set()
         self.t = 0
+        self.frame_start = 0
         self.int_pending = False
         self.frame = 0
         self.stopped = False
         self.profile = {}
         self.trace = None           # deque of recent PCs when tracing
+        self.samples = None         # PC samples (one per chunk) when profiling
         m.set_output_callback(self.out)
         m.set_input_callback(self.inp)
         m.set_breakpoint(0)
@@ -137,7 +139,7 @@ class CPC:
         if (hi & 0x08) == 0:
             reg = hi & 3
             if reg == 1:                        # port B: VSYNC in bit 0
-                line = (self.t % FRAME_T) // LINE_T
+                line = (self.t - self.frame_start) // LINE_T
                 return 0x1E | (1 if line < VSYNC_LINES else 0)
             if reg == 0:                        # port A: PSG read
                 if (self.ppi_c >> 6) == 1 and self.psg_reg == 14:
@@ -154,6 +156,7 @@ class CPC:
     def run_frame(self):
         m = self.m
         start = self.t
+        self.frame_start = start
         next_int = [start + l * LINE_T for l in INT_LINES]
         end = start + FRAME_T
         while self.t < end and not self.stopped:
@@ -163,6 +166,8 @@ class CPC:
             if self.int_pending and m.on_handle_active_int():
                 self.int_pending = False
             chunk = 1 if self.trace is not None else CHUNK_T
+            if self.samples is not None:
+                self.samples.append(m.pc)
             if self.trace is not None:
                 self.trace.append(m.pc)
             m.ticks_to_stop = chunk
@@ -219,6 +224,8 @@ def main():
     ap.add_argument("--keys")
     ap.add_argument("--screen")
     ap.add_argument("--peek", nargs="*", default=[])
+    ap.add_argument("--profile", type=int, default=0, metavar="SKIP",
+                    help="sample the PC after SKIP frames and print a per-routine profile")
     ap.add_argument("--trace", type=int, default=0,
                     help="print the last N program counters before stopping")
     a = ap.parse_args()
@@ -230,6 +237,8 @@ def main():
     script = parse_keys(a.keys)
     for f in range(a.frames):
         cpc.keys_down = {k for (s, e, ks) in script if s <= f <= e for k in ks}
+        if a.profile and f == a.profile:
+            cpc.samples = []
         cpc.run_frame()
         if cpc.stopped:
             break
@@ -241,6 +250,18 @@ def main():
         addr = syms[name.lower()] if name.lower() in syms else int(name, 16)
         n = int(ln, 0) if ln else 16
         print(f"{name} @{addr:04X}: " + " ".join(f"{b:02X}" for b in cpc.base_ram(addr, n)))
+    if cpc.samples:
+        import bisect
+        import collections
+        top = sorted((v, k) for k, v in syms.items() if "." not in k)
+        hist = collections.Counter()
+        for pc in cpc.samples:
+            i = bisect.bisect_right(top, (pc, "~")) - 1
+            hist[top[i][1] if i >= 0 else "?"] += 1
+        total = len(cpc.samples)
+        print(f"profile: {total} samples over {cpc.frame - a.profile} frames")
+        for name, n in hist.most_common(15):
+            print(f"  {100 * n / total:5.1f}%  {name}")
     if cpc.trace:
         names = sorted((v, k) for k, v in syms.items())
         def where(pc):

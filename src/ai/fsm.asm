@@ -10,9 +10,9 @@
 SHORT_R         equ 32
 LONG_R          equ 80
 CONE_HALF       equ 21          ; 30 degrees in 1/256 turns
-SUSPECT_TICKS   equ 37          ; 1.5 s at 25 Hz before opening fire
-CALM_TICKS      equ 50          ; how long a suspicious guard stays wary
-FIRE_TICKS      equ 12          ; shot interval in combat
+SUSPECT_TICKS   equ 19          ; 1.5 s (AI runs at 12.5 Hz per guard)
+CALM_TICKS      equ 25          ; how long a suspicious guard stays wary
+FIRE_TICKS      equ 6           ; shot interval in combat (~1 s)
 SHOT_DAMAGE     equ 3
 
 ; IX = guard
@@ -47,6 +47,12 @@ ai_do_investigate:
   ld (ix+ent.state),ST_IDLE
   ret
 .look:
+  ld a,(ix+ent.state)           ; still walking to the noise
+  cp ST_IDLE
+  ret nz
+  ld a,(tick)                   ; every 4th tick (AI runs every 2nd)
+  and 2
+  ret nz
   dec (ix+ent.ai_timer)
   ret nz
   jr ai_resume_patrol

@@ -27,6 +27,10 @@ commandos_input:
   call kbd_hit
   ld a,2
   jr nz,.select
+  ; D: Green Beret decoy
+  ld a,KEY_D
+  call kbd_hit
+  jp nz,decoy_key
   ; C / fire 2 toggles crawl
   ld a,KEY_C
   call kbd_hit
@@ -67,8 +71,11 @@ cmd_click:
   jr nc,.ground
   cp CMD_COUNT
   jr c,select_cmd               ; clicked a commando
-  ; clicked a guard: the Green Beret goes for the knife
   ld (click_target),a
+  ld a,(ix+ent.type)
+  cp ET_GUARD
+  jr nz,.ground
+  ; clicked a guard: the Green Beret goes for the knife
   ld a,(sel_cmd)
   cp CMD_BERET
   jr nz,.ground
@@ -165,7 +172,7 @@ cmd_walk:
   call ent_step
   jr z,.stop
   inc (ix+ent.anim)
-  ret
+  jp footsteps
 .stop:
   ld (ix+ent.state),ST_IDLE
   ld (ix+ent.aux2),0

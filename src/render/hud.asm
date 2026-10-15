@@ -31,10 +31,20 @@ hud_update:
   ld hl,hud_dirty
   and (hl)
   ld (hl),a
-  ; fall through
+  ; panel background only once per mission and buffer: everything drawn
+  ; on top of it overwrites itself in place
+  ld hl,hud_bg
+  ld a,(hl)
+  and b
+  jr z,hud_contents
+  ld a,b
+  cpl
+  and (hl)
+  ld (hl),a
+  call hud_background
+  jr hud_contents
 
-hud_draw:
-  ; background tiles
+hud_background:
   ld c,HUD_ROW
 .row:
   ld b,0
@@ -60,7 +70,9 @@ hud_draw:
   ld a,c
   cp 25
   jr nz,.row
+  ret
 
+hud_contents:
   ; portraits, frames and health bars for the three commandos
   xor a
 .cmd:

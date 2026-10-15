@@ -13,8 +13,8 @@ macro SETUP
   ld (cursor_y),a
 mend
 macro SCENARIO
-  db 3, 0
-  db 1, J_F                     ; click the guard: knife order
-  db 50, 0
+  db 3, 0, &FF
+  db 1, J_F, &FF                     ; click the guard: knife order
+  db 50, 0, &FF
 mend
   include "main.asm"

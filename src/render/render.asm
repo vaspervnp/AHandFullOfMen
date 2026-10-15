@@ -9,23 +9,22 @@
 ; then flips the CRTC to show it.
 ; ===========================================================================
 
-MAX_RECTS       equ 40
-
-; -> B = dirty bit of the back buffer (1 = &C000, 2 = &8000), HL = rect list
+; -> B = dirty bit of the back buffer (1 = &C000, 2 = &8000), HL = its
+;    dirty-tile map
 back_state:
   ld a,(back_hi)
   cp &C0
   ld b,1
-  ld hl,rects_c0
+  ld hl,dirty_c0
   ret z
   ld b,2
-  ld hl,rects_80
+  ld hl,dirty_80
   ret
 
 render_frame:
   call sprites_off
   call back_state
-  ld (cur_rects),hl
+  ld (cur_dirty),hl
   ld a,(view_dirty)
   and b
   jr z,.restore
@@ -35,34 +34,13 @@ render_frame:
   and (hl)
   ld (hl),a
   call draw_view
-  jr .clear_rects
+  call clear_dirty
+  jr .hud
 .restore:
-  ld hl,(cur_rects)
-  ld a,(hl)
-  or a
-  jr z,.hud
-  inc hl
-.r:
-  push af
-  ld b,(hl)
-  inc hl
-  ld c,(hl)
-  inc hl
-  ld d,(hl)
-  inc hl
-  ld e,(hl)
-  inc hl
-  push hl
-  call restore_rect
-  pop hl
-  pop af
-  dec a
-  jr nz,.r
-.clear_rects:
-  ld hl,(cur_rects)
-  ld (hl),0
+  call restore_dirty
 .hud:
   call hud_update
+  call cone_draw
   call sort_entities
   call sprites_on
   ; entities, back to front
@@ -86,32 +64,12 @@ render_frame:
   call draw_cursor
   jp sprites_off
 
-; Store the rectangle returned by blit_clipped (B,C,D,E) if visible.
+; Mark the rectangle returned by blit_clipped (B,C,D,E) dirty if visible.
 record_rect:
   ld a,d
   or a
   ret z
-  ld hl,(cur_rects)
-  ld a,(hl)
-  cp MAX_RECTS
-  ret nc
-  inc (hl)
-  inc hl
-  add a,a
-  add a,a
-  add a,l
-  ld l,a
-  jr nc,.nc
-  inc h
-.nc:
-  ld (hl),b
-  inc hl
-  ld (hl),c
-  inc hl
-  ld (hl),d
-  inc hl
-  ld (hl),e
-  ret
+  jp mark_rect
 
 ; IX = entity -> B,C = signed screen position of its sprite's top-left,
 ; carry set if entirely off screen.
@@ -156,6 +114,9 @@ ent_screen_pos:
 
 ; IX = entity
 draw_entity:
+  ld a,(ix+ent.type)
+  cp ET_DECOY
+  jr z,draw_decoy
   call ent_screen_pos
   ret c
   push bc
@@ -178,6 +139,21 @@ draw_entity:
   pop bc
   ld d,SPR_W
   ld e,SPR_H
+  call blit_clipped
+  jp record_rect
+
+; Small 8x8 radio icon standing on its spot
+draw_decoy:
+  call ent_screen_pos
+  ret c
+  inc b                         ; centre the 4-byte icon in the 6-byte box
+  ld a,c
+  add a,SPR_H-CUR_H
+  ld c,a
+  ld a,4
+  call cursor_gfx
+  ld d,CUR_W
+  ld e,CUR_H
   call blit_clipped
   jp record_rect
 

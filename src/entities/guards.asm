@@ -23,7 +23,10 @@ guards_update:
 guard_update:
   bit EF_DEAD,(ix+ent.flags)
   ret nz
-  call ai_update                ; vision + state machine (src/ai/fsm.asm)
+  ld a,(tick)                   ; think on alternate ticks, staggered
+  add a,(ix+ent.idx)
+  rra
+  call nc,ai_update             ; vision + state machine (src/ai/fsm.asm)
   ld a,(ix+ent.state)
   cp ST_WALK
   ret nz
@@ -33,9 +36,13 @@ guard_update:
   dec (ix+ent.timer)
   ret
 .walk:
+  ld a,(ix+ent.ai)              ; investigating guards walk briskly
+  cp AI_INVESTIGATE
+  jr z,.brisk
   ld a,(tick)                   ; sentries stroll at half commando speed
   and 2
   ret nz
+.brisk:
   ld c,TF_SOLID|TF_WATER
   call ent_step
   jr z,.arrived
@@ -43,6 +50,12 @@ guard_update:
   ret
 .arrived:
   ld (ix+ent.anim),0
+  ld a,(ix+ent.ai)
+  cp AI_INVESTIGATE
+  jr nz,.next_wp
+  ld (ix+ent.state),ST_IDLE     ; at the noise: stand and look around
+  ret
+.next_wp:
   ; pause here, then head for the next waypoint
   call guard_route_ptr
   ld a,(ix+ent.aux)

@@ -4,6 +4,6 @@ TEST_MENU equ 1
 macro SETUP
 mend
 macro SCENARIO
-  db 30, 0
+  db 30, 0, &FF
 mend
   include "main.asm"
