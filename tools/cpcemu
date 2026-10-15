@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Headless CPC test harness built on the Caprice32 snap.
+#
+#   tools/cpcemu [-shot out.png] [-timeout secs] [-keys "autotype"] [-nowait] <file.sna|file.dsk>
+#
+# -nowait: don't wait for the &0000 breakpoint; screenshot right after the
+#          autotyped keys (pad them with harmless keys to let time pass).
+#
+# The program under test signals "ready" by jumping to &0000 (Caprice32's
+# CAP32_WAITBREAK breakpoint). We then take a screenshot and exit.
+# Exit code: 0 = breakpoint reached and screenshot written, 1 = timeout/crash.
+set -euo pipefail
+
+SHOT=""
+SNAPOUT=""
+WAIT='\(CAP32_WAITBREAK)'
+TIMEOUT=60
+KEYS=""
+while [[ $# -gt 1 ]]; do
+  case "$1" in
+    -shot) SHOT="$2"; shift 2 ;;
+    -snap) SNAPOUT="$2"; shift 2 ;;
+    -nowait) WAIT=""; shift ;;
+    -timeout) TIMEOUT="$2"; shift 2 ;;
+    -keys) KEYS="$2"; shift 2 ;;
+    *) echo "unknown option $1" >&2; exit 2 ;;
+  esac
+done
+IMAGE="$(realpath "$1")"
+
+SNAP_DATA="$HOME/snap/caprice32/current"
+SHOTDIR="$SNAP_DATA/screenshots"
+SNAPDIR="$SNAP_DATA/snap"
+mkdir -p "$SHOTDIR" "$SNAPDIR"
+rm -f "$SHOTDIR"/screenshot_*.png "$SNAPDIR"/snapshot_*.sna
+DUMP=""
+[[ -n "$SNAPOUT" ]] && DUMP='\(CAP32_SNAPSHOT)'
+
+
+# The autocmd goes through a file so the \( ) escapes survive quoting.
+CMDFILE="$SNAP_DATA/autocmd.sh"
+cat > "$CMDFILE" <<INNER
+export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
+exec "\$SNAP/usr/bin/cap32" --cfg_file="\$SNAP_USER_DATA/etc/cap32.cfg" \\
+  -O system.limit_speed=0 -O system.model=2 -O video.scr_fps=0 \\
+  -a '${KEYS}${WAIT}\\(CAP32_SCRNSHOT)${DUMP}\\(CAP32_EXIT)' "$IMAGE"
+INNER
+
+LOG="$(dirname "$IMAGE")/cpcemu.log"
+if timeout "$TIMEOUT" snap run --shell caprice32.launcher -c "bash '$CMDFILE'" >"$LOG" 2>&1 \
+   && ls "$SHOTDIR"/screenshot_*.png >/dev/null 2>&1; then
+  if [[ -n "$SHOT" ]]; then mv "$(ls -t "$SHOTDIR"/screenshot_*.png | head -1)" "$SHOT"; fi
+  if [[ -n "$SNAPOUT" ]]; then mv "$(ls -t "$SNAPDIR"/snapshot_*.sna | head -1)" "$SNAPOUT"; fi
+  if grep -q "ERROR" "$LOG"; then grep "ERROR" "$LOG" >&2; exit 1; fi
+  echo "cpcemu: OK${SHOT:+ -> $SHOT}"
+else
+  echo "cpcemu: FAILED (timeout ${TIMEOUT}s or crash, see $LOG)" >&2
+  exit 1
+fi

@@ -1,0 +1,3 @@
+build/
+*:Zone.Identifier
+__pycache__/

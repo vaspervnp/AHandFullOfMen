@@ -1,0 +1,14 @@
+{
+  "sheets": [
+    {
+      "file": "norway.png",
+      "label": "tiles",
+      "cell": [
+        8,
+        8
+      ],
+      "kind": "plain",
+      "count": 36
+    }
+  ]
+}

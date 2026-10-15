@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Play the game interactively.
+#   tools/play [cpcemu|caprice32] [file]   (default: caprice32, build/handful_of_men.sna)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+EMU="${1:-caprice32}"
+FILE="$(realpath "${2:-build/handful_of_men.sna}")"
+case "$EMU" in
+  cpcemu)    cd /usr/share/cpcemu && exec ./cpcemu -t 2 "$FILE" ;;
+  caprice32) exec snap run caprice32.launcher "$FILE" ;;
+  *) echo "usage: tools/play [cpcemu|caprice32] [file.sna|file.dsk]" >&2; exit 2 ;;
+esac

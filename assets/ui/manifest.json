@@ -1,0 +1,32 @@
+{
+  "sheets": [
+    {
+      "file": "font.png",
+      "label": "font",
+      "cell": [
+        4,
+        8
+      ],
+      "kind": "font",
+      "count": 49
+    },
+    {
+      "file": "portraits.png",
+      "label": "portrait",
+      "cell": [
+        16,
+        24
+      ],
+      "kind": "plain"
+    },
+    {
+      "file": "title.png",
+      "label": "title_gfx",
+      "cell": [
+        160,
+        56
+      ],
+      "kind": "plain"
+    }
+  ]
+}

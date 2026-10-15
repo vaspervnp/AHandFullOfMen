@@ -1,0 +1,31 @@
+{
+  "sheets": [
+    {
+      "file": "beret.png",
+      "label": "spr_beret",
+      "cell": [
+        12,
+        16
+      ],
+      "kind": "masked"
+    },
+    {
+      "file": "guard.png",
+      "label": "spr_guard",
+      "cell": [
+        12,
+        16
+      ],
+      "kind": "masked"
+    },
+    {
+      "file": "cursor.png",
+      "label": "spr_cursor",
+      "cell": [
+        8,
+        8
+      ],
+      "kind": "masked"
+    }
+  ]
+}
