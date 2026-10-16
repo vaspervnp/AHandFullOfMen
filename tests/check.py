@@ -331,6 +331,41 @@ def check_t46_m5_escape(r):
     assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
 
 
+def check_t47_m6_boot(r):
+    assert r.byte("cur_mission") == 5
+    assert [r.ent(i, "role") for i in range(3)] == [0, 2, ROLE_SPY], "wrong squad"
+    guards = sum(1 for i in range(16) if r.ent(i, "type") == 2)
+    assert guards == 7, f"{guards} sentries"
+    assert r.byte("alarm") == 0, "spotted at the start"
+
+
+def check_t48_m6_blast(r):
+    assert r.byte("target_down") == 1, "the plant is still standing"
+    assert r.byte("map_buf", 6 * 40 + 26) == TILE_RUBBLE, "plant tiles not replaced"
+
+
+def check_t49_m6_too_far(r):
+    assert r.ent(10, "type") != 4, "the barrel never went off"
+    assert r.byte("alarm") == 1
+    assert r.byte("target_down") == 0, "a barrel in the corner should not reach the plant"
+
+
+def check_t50_m6_route_in(r):
+    ok, pos = near(r, 0, 142, 111)
+    assert ok, f"Green Beret at {pos}, never reached the barrels (142,111)"
+
+
+def check_t51_m6_drag(r):
+    assert r.ent(0, "drag") == 11, f"drag={r.ent(0, 'drag')}, expected barrel 10+1"
+    bx, by = r.ent(10, "x"), r.ent(10, "y")
+    assert abs(bx - 112) <= 12 and abs(by - 82) <= 12, f"barrel at ({bx},{by}), not by the plant"
+
+
+def check_t52_m6_escape(r):
+    assert r.ent(2, "flags") & EF_BOARDED, "the Spy did not board the truck"
+    assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

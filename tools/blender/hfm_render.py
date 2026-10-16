@@ -41,7 +41,7 @@ CHAR_RES = (96, 64)         # 12x16 Mode 0 sprite * (8, 4)
 TOWER_RES = (128, 128)      # 16x32 Mode 0 stamp * (8, 4)
 UNIT = 2.8 / 24             # Blender units per visual unit (character framing)
 SUBJECTS = ["beret", "marine", "sniper", "sapper", "spy", "guard", "tower", "pine", "rock",
-            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "railbridge", "gun", "portraits", "banner"]
+            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "railbridge", "gun", "plant", "portraits", "banner"]
 OPERATIVES = ("beret", "marine", "sniper", "sapper", "spy")      # portrait order = ROLE_*
 
 LOOKS = {
@@ -467,6 +467,22 @@ def build_gun(sc):                                # 4x3 tiles: 32x24 Mode 0 px, 
     frame_camera(sc, 32, 24)
 
 
+def build_plant(sc):                              # 4x3 tiles: 32x24 Mode 0 px, heavy water plant
+    box("hall", (4.6, 1.6, 1.0), (0.2, 1.6, 0.5), "white")          # concrete hall
+    box("roof", (4.7, 1.7, 0.12), (0.2, 1.6, 1.06), "teal")
+    for i in range(6):                                               # lit windows, south face
+        box("window", (0.3, 0.05, 0.3), (-1.75 + i * 0.75, 0.79, 0.6), "byel")
+    box("door", (0.5, 0.05, 0.6), (1.85, 0.79, 0.3), "black")
+    cyl("chimney", 0.25, 1.0, (-1.6, 1.4, 1.2), "red", verts=10)
+    cyl("cap", 0.28, 0.12, (-1.6, 1.4, 1.7), "black", verts=10)
+    cyl("tank", 0.45, 1.1, (-2.8, 1.0, 0.55), "grey", verts=12)      # the heavy water cells
+    cyl("tank2", 0.45, 1.1, (-2.8, 2.0, 0.55), "grey", verts=12)
+    box("pipe", (0.1, 0.1, 1.0), (-2.35, 1.5, 0.95), "black")
+    box("pipe2", (0.6, 0.1, 0.1), (-2.6, 1.5, 1.05), "black")
+    box("sign", (0.9, 0.05, 0.2), (0.2, 0.79, 0.88), "bred")
+    frame_camera(sc, 32, 24)
+
+
 def build_trap(sc):                               # bear trap, in a 12x16 sprite cell
     cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=10)
     for y in (-0.36, 0.36):                          # open jaws, teeth up
@@ -584,7 +600,7 @@ def render_prop(subject, out_dir, blend_dir):
     builders = {"tower": build_tower, "pine": build_pine, "rock": build_rock,
                 "barrel": build_barrel, "truck": build_truck, "banner": build_banner,
                 "depot": build_depot, "trap": build_trap, "bomb": build_bomb,
-                "uboat": build_uboat, "railbridge": build_railbridge, "gun": build_gun}
+                "uboat": build_uboat, "railbridge": build_railbridge, "gun": build_gun, "plant": build_plant}
     sc, _ = open_or_build(subject, blend_dir, builders[subject])
     render_still(sc, out_dir, subject, subject)
 

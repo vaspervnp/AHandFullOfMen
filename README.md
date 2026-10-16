@@ -33,7 +33,7 @@ expansion. On a 64K machine the loader says so and returns to BASIC.
 | V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
-The title menu lists these shortcuts too. Keys 1 to 5 on the menu pick the
+The title menu lists these shortcuts too. Keys 1 to 6 on the menu pick the
 mission. Space or Fire opens its briefing (objectives, and what each
 commando's D and G do), and pressing it again starts the mission.
 Accomplishing a mission moves the menu on to the next one.
@@ -92,6 +92,15 @@ The only gate faces the south road, but there's a gap in the north fence
 that only the Marine can reach, by swimming up the coast. Blow the gun
 with the Sapper's time bomb, then take the truck east along the road.
 Squad: Marine, Sapper, Spy (abilities as above).
+
+## Mission 6: Heavy Water
+
+The heavy water plant stands in a fenced compound east of a river gorge,
+reached over a guarded wooden bridge or a frozen stretch further north.
+The fuel barrels sit in a far corner of the compound, too far from the
+plant for their blast to reach it: the Green Beret has to drag one to the
+plant before the Sniper shoots it. Then get back across the gorge to the
+truck. Squad: Green Beret, Sniper, Spy (abilities as above).
 
 ## Stealth rules
 

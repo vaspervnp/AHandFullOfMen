@@ -24,7 +24,7 @@ LEGEND = {
 }
 STAMPS = {"P": ("pine", 2, 3), "X": ("tower", 2, 4), "K": ("truck", 3, 2), "F": ("depot", 3, 2),
           "U": ("uboat", 16, 6), "Y": ("rbridge", 4, 3),
-          "C": ("gun", 4, 3)}
+          "C": ("gun", 4, 3), "H": ("plant", 4, 3)}
 
 
 def main():

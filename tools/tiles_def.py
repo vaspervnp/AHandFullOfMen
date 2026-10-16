@@ -16,14 +16,16 @@ TILE_NAMES = [
     "rbridge0", "rbridge1", "rbridge2", "rbridge3", "rbridge4", "rbridge5",  # 4x3 stamp
     "rbridge6", "rbridge7", "rbridge8", "rbridge9", "rbridge10", "rbridge11",
     "rail_l", "rail_r",                                             # railway, 2 tiles wide
-] + [f"gun{i}" for i in range(12)]                                  # 4x3 coastal gun stamp
+] + [f"gun{i}" for i in range(12)] + [                            # 4x3 coastal gun stamp
+    f"plant{i}" for i in range(12)]                                 # 4x3 heavy water plant
 
 # Multi-tile props rendered in Blender and composited onto the ground
 # painted in assets/aseprite/terrain.aseprite: name -> (first tile, w, h)
 STAMPS = {"pine": ("pine0", 2, 3), "tower": ("tower0", 2, 4), "truck": ("truck0", 3, 2),
           "rock": ("rock", 1, 1), "depot": ("depot0", 3, 2), "uboat": ("uboat0", 16, 6),
           "railbridge": ("rbridge0", 4, 3),
-          "gun": ("gun0", 4, 3)}
+          "gun": ("gun0", 4, 3),
+          "plant": ("plant0", 4, 3)}
 # Stamp cells not painted in terrain.aseprite get this ground underneath.
 STAMP_GROUND = {"uboat": "water", "railbridge": "water"}
 SHEET_COLS = 8

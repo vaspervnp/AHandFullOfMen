@@ -182,3 +182,15 @@ tile_attrs:
   db TF_SOLID|TF_OPAQUE         ; 168 gun9
   db TF_SOLID|TF_OPAQUE         ; 169 gun10
   db TF_SOLID                   ; 170 gun11
+  db TF_SOLID|TF_OPAQUE         ; 171 plant0 (4x3 heavy water plant)
+  db TF_SOLID|TF_OPAQUE         ; 172 plant1
+  db TF_SOLID|TF_OPAQUE         ; 173 plant2
+  db TF_SOLID|TF_OPAQUE         ; 174 plant3
+  db TF_SOLID|TF_OPAQUE         ; 175 plant4
+  db TF_SOLID|TF_OPAQUE         ; 176 plant5
+  db TF_SOLID|TF_OPAQUE         ; 177 plant6
+  db TF_SOLID|TF_OPAQUE         ; 178 plant7
+  db TF_SOLID|TF_OPAQUE         ; 179 plant8
+  db TF_SOLID|TF_OPAQUE         ; 180 plant9
+  db TF_SOLID|TF_OPAQUE         ; 181 plant10
+  db TF_SOLID|TF_OPAQUE         ; 182 plant11
