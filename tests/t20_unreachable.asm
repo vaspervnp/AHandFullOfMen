@@ -19,7 +19,6 @@ macro SETUP
   ld (hl),a
   inc hl
   ld (hl),a
-  call path_map_changed         ; map edits must refresh the walk grids
   ld a,21*4+2-0                 ; cursor on the enclosed tile (21,20)
   ld (cursor_x),a
   ld a,20*8+4-112

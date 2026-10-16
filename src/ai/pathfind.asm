@@ -2,7 +2,8 @@
 ; Grid pathfinding (breadth-first flood fill on the tile map)
 ;
 ; path_dist is the map padded with a blocked border (42x34), so neighbour
-; checks never need bounds tests. Cells hold &FE = blocked, &FF = unvisited,
+; checks never need bounds tests. Each search builds it from map_buf for its
+; own mask (walkers vs the swimming Marine), so map changes need no upkeep. Cells hold &FE = blocked, &FF = unvisited,
 ; else the step distance from the goal. The flood starts at the goal and
 ; stops as soon as it reaches the walker, which then walks downhill,
 ; keeping only the turning points as waypoints. 8-way moves; a diagonal is
@@ -83,16 +84,13 @@ path_to:
   inc hl
   ld a,(pf_mask)
   ld (hl),a
-  cp TF_SOLID                   ; phase 1: copy the walk grid
-  ld hl,pf_cache_swim
-  jr z,.src
-  ld hl,pf_cache_land
-.src:
+  ld (pf_idle.mask+1),a         ; phase 1: build the walk grid for it
+  ld hl,map_buf
   ld (pf_fill_src),hl
   ld hl,path_dist
   ld (pf_fill_dst),hl
-  ld hl,PATH_W*PATH_H
-  ld (pf_fill_left),hl
+  xor a
+  ld (pf_fill_row),a
   ld a,PF_FILL
   ld (pf_job_phase),a
   jp pf_pending
@@ -134,7 +132,7 @@ pf_pending:
 PF_FILL         equ 1           ; job phases
 PF_SETUP        equ 2
 PF_FLOOD        equ 3
-PF_FILL_CHUNK   equ 256         ; bytes of grid copied per slice
+PF_FILL_ROWS    equ 6           ; grid rows built per slice
 PF_SLICE_POPS   equ 8           ; cells expanded per slice
 
 ; Called while waiting for VSYNC: one slice of the current job, or halt.
@@ -147,34 +145,65 @@ pf_idle:
 .work:
   ld a,(pf_job_phase)
   cp PF_FLOOD
-  jr z,pf_idle_flood
+  jp z,pf_idle_flood
   cp PF_SETUP
-  jr z,pf_idle_setup
-  ; PF_FILL: copy the next chunk of the walk grid into path_dist
-  ld hl,(pf_fill_left)
-  ld bc,PF_FILL_CHUNK
-  or a
-  sbc hl,bc
-  jr nc,.chunk
-  add hl,bc                     ; last, short chunk
-  ld b,h
-  ld c,l
-  ld hl,0
-.chunk:
-  ld (pf_fill_left),hl
-  ld hl,(pf_fill_src)
+  jp z,pf_idle_setup
+  ; PF_FILL: the next PF_FILL_ROWS rows of path_dist, straight from the
+  ; map: blocked border, then each tile open (&FF) or blocked (&FE) for
+  ; the job's mask
+  push ix
   ld de,(pf_fill_dst)
-  ld a,b
-  or c
-  jr z,.filled
-  ldir
+  ld ixh,PF_FILL_ROWS
+.row:
+  ld a,(pf_fill_row)
+  or a
+  jr z,.edge
+  cp PATH_H-1
+  jr z,.edge
+  ld a,P_BLOCKED                ; left border
+  ld (de),a
+  inc de
+  ld hl,(pf_fill_src)
+  ld b,tile_attrs>>8            ; page aligned
+  ld ixl,MAP_W
+.col:
+  ld c,(hl)
+  inc hl
+  ld a,(bc)
+.mask:
+  and 0                         ; patched: the job's blocking flags
+  add a,&FF                     ; carry if blocked
+  sbc a,a
+  add a,P_OPEN                  ; -> &FE blocked, &FF open
+  ld (de),a
+  inc de
+  dec ixl
+  jr nz,.col
   ld (pf_fill_src),hl
+  ld a,P_BLOCKED                ; right border
+  ld (de),a
+  inc de
+  jr .next
+.edge:
+  ld a,P_BLOCKED
+  ld b,PATH_W
+.e:
+  ld (de),a
+  inc de
+  djnz .e
+.next:
+  ld hl,pf_fill_row
+  inc (hl)
+  ld a,(hl)
+  cp PATH_H
+  jr z,.filled
+  dec ixh
+  jr nz,.row
   ld (pf_fill_dst),de
-  ld hl,(pf_fill_left)
-  ld a,h
-  or l
-  ret nz
+  pop ix
+  ret
 .filled:
+  pop ix
   ld a,PF_SETUP
   ld (pf_job_phase),a
   ret
@@ -480,64 +509,6 @@ cmd_or_guard_mask:
 ; ---------------------------------------------------------------------------
 ; Flood fill internals
 ; ---------------------------------------------------------------------------
-
-; The map changed (new mission, tower destroyed): rebuild both grids now,
-; while the screen is blank or the explosion covers the pause.
-path_map_changed:
-  ld hl,pf_cache_land
-  ld c,TF_SOLID|TF_WATER
-  call pf_build_cache
-  ld hl,pf_cache_swim
-  ld c,TF_SOLID
-  ; fall through
-
-; HL = grid, C = blocking mask. Border and blocking tiles = &FE, else &FF.
-pf_build_cache:
-  ld a,c
-  ld (.mask+1),a
-  ld b,PATH_W                   ; top border row
-  ld a,P_BLOCKED
-.top:
-  ld (hl),a
-  inc hl
-  djnz .top
-  ex de,hl                      ; DE = grid
-  ld hl,map_buf
-  ld c,MAP_H
-.row:
-  ld a,P_BLOCKED                ; left border
-  ld (de),a
-  inc de
-  ld b,MAP_W
-.col:
-  push hl
-  ld l,(hl)                     ; tile id -> attribute (page-aligned table)
-  ld h,tile_attrs>>8
-  ld a,(hl)
-  pop hl
-.mask:
-  and 0                         ; patched
-  ld a,P_OPEN
-  jr z,.open
-  ld a,P_BLOCKED
-.open:
-  ld (de),a
-  inc de
-  inc hl
-  djnz .col
-  ld a,P_BLOCKED                ; right border
-  ld (de),a
-  inc de
-  dec c
-  jr nz,.row
-  ex de,hl
-  ld b,PATH_W                   ; bottom border row
-  ld a,P_BLOCKED
-.bot:
-  ld (hl),a
-  inc hl
-  djnz .bot
-  ret
 
 ; B = world x, C = world y -> HL = grid cell
 pf_cell:

@@ -76,9 +76,9 @@
   data that doesn't need to be there goes in `src/data/texts.asm`.
 
 ## Game code rules
-- Any change to `map_buf` must call `map_rect_changed` (a few tiles: walk
-  grids, dirty tiles, cone recast) or `path_map_changed` plus a full
-  redraw (mission load).
+- Any change to `map_buf` must call `map_rect_changed` (a few tiles: dirty
+  tiles, cone recast) or do a full redraw (mission load). Path searches
+  build their walk grid from `map_buf` each time.
 - Renderer: `render_frame` diffs draw items against a per-buffer cache.
   Anything drawn into the play area must go through it (draw items or
   tiles marked dirty), or the `REF_RENDER` comparison in tests/check.py

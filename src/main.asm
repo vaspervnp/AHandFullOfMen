@@ -510,7 +510,7 @@ pf_job_mask:    db 0
 pf_job_phase:   db 0
 pf_fill_src:    dw 0
 pf_fill_dst:    dw 0
-pf_fill_left:   dw 0
+pf_fill_row:    db 0
 pf_pops:        db 0
 pf_wc_row:      db 0
 wait_v:         db 0
@@ -552,8 +552,6 @@ data_start:
 map_buf:        defs MAP_W*MAP_H
 path_table:     defs PATH_SLOTS*PATH_SLOT_SIZE
 path_dist:      defs PATH_W*PATH_H
-pf_cache_land:  defs PATH_W*PATH_H
-pf_cache_swim:  defs PATH_W*PATH_H
   align 256                     ; pf_wrap detects the end by its page
 path_queue:     defs PATH_QUEUE_LEN*2
 cone_buf:       defs CONE_RAYS*CONE_STEPS*CONE_DOT  ; never used while a sprite bank is paged in

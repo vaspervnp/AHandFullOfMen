@@ -80,14 +80,14 @@ m02_briefing:
 m03_desc:
   dw m03_spawns, map_mission03
   db M03_CAM_X, M03_CAM_Y
-  db M03_UBOAT_COL, M03_UBOAT_ROW, 8, 4, M03_UBOAT_X, M03_UBOAT_Y
+  db M03_UBOAT_COL, M03_UBOAT_ROW, 16, 6, M03_UBOAT_X, M03_UBOAT_Y
   dw m03_ruin
   db M03_TRUCK_X0, M03_TRUCK_X1, M03_TRUCK_Y0, M03_TRUCK_Y1
   dw m03_txt_name, m03_txt_brief, m03_txt_hud1, m03_txt_hud2, m03_txt_obj
   db M03_GUARDS
   dw m03_briefing
 m03_ruin:                       ; she sinks
-  ds 8*4,TILE_WATER
+  ds 16*6,TILE_WATER
 m03_txt_name:  db "MISSION 3: ROUGH WATERS",0
 m03_txt_brief: db "HARBOUR - SINK THE U-BOAT",0
 m03_txt_hud1:  db "SINK THE U-BOAT    ",0

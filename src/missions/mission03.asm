@@ -50,10 +50,10 @@ m03_route_road:                 ; between the gate and the truck
 M03_CAM_X       equ 0
 M03_CAM_Y       equ CAM_MAX_Y
 M03_GUARDS      equ 6
-M03_UBOAT_COL   equ 20          ; 8x4 U-boat stamp, top-left tile
-M03_UBOAT_ROW   equ 4
+M03_UBOAT_COL   equ 20          ; 16x6 U-boat stamp, top-left tile
+M03_UBOAT_ROW   equ 3
 M03_UBOAT_X     equ M03_UBOAT_COL*4+2       ; its pier side (world)
-M03_UBOAT_Y     equ (M03_UBOAT_ROW+4)*8-2
+M03_UBOAT_Y     equ (M03_UBOAT_ROW+6)*8-2
 M03_TRUCK_X0    equ 35*4        ; truck footprint: cols 35-37, rows 27-28
 M03_TRUCK_X1    equ 38*4-1
 M03_TRUCK_Y0    equ 27*8

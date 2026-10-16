@@ -330,10 +330,9 @@ map_flags:
   ret
 
 ; ---------------------------------------------------------------------------
-; Map tiles (B, C) .. (B+D-1, C+E-1) were replaced in map_buf: refresh the
-; pathfinder's walk grids for them, redraw them in both buffers and recast
-; the vision cone (it may see further now). Cheaper than path_map_changed
-; plus a full view redraw.
+; Map tiles (B, C) .. (B+D-1, C+E-1) were replaced in map_buf: redraw them
+; in both buffers and recast the vision cone (it may see further now).
+; (Path searches read map_buf directly.)
 ; ---------------------------------------------------------------------------
 map_rect_changed:
   ld a,&FF
@@ -357,66 +356,8 @@ map_rect_changed:
   jr nz,.row
   ret
 
-; B = map column, C = map row
+; B = map column, C = map row: if visible, mark it in both dirty maps
 map_tile_changed:
-  ld l,c                        ; E = tile attributes
-  ld h,0
-  add hl,hl
-  ld de,map_row_offs
-  add hl,de
-  ld e,(hl)
-  inc hl
-  ld d,(hl)
-  ld hl,map_buf
-  add hl,de
-  ld e,b
-  ld d,0
-  add hl,de
-  ld l,(hl)
-  ld h,tile_attrs>>8
-  ld e,(hl)
-  ld hl,PATH_W+1                ; grid cell: (row + 1) * PATH_W + col + 1
-  ld a,c
-  or a
-  jr z,.cell
-  push de
-  ld de,PATH_W
-.mul:
-  add hl,de
-  dec a
-  jr nz,.mul
-  pop de
-.cell:
-  ld a,b
-  add a,l
-  ld l,a
-  jr nc,.nc
-  inc h
-.nc:
-  push hl
-  ld a,e
-  and TF_SOLID|TF_WATER
-  ld a,P_OPEN
-  jr z,.land
-  ld a,P_BLOCKED
-.land:
-  ld d,h
-  push de
-  ld de,pf_cache_land
-  add hl,de
-  pop de
-  ld (hl),a
-  pop hl
-  ld a,e
-  and TF_SOLID
-  ld a,P_OPEN
-  jr z,.swim
-  ld a,P_BLOCKED
-.swim:
-  ld de,pf_cache_swim
-  add hl,de
-  ld (hl),a
-  ; visible? mark it in both dirty maps
   ld a,b
   ld hl,cam_x
   sub (hl)

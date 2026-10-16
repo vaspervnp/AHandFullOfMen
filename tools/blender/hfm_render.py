@@ -412,7 +412,7 @@ def build_depot(sc):                              # 3x2 tiles: 24x16 Mode 0 px
     frame_camera(sc, 24, 16)
 
 
-def build_uboat(sc):                              # 8x4 tiles: 64x32 Mode 0 px, bow east
+def build_uboat(sc):                              # 16x6 tiles: 128x48 Mode 0 px, bow east
     cyl("hull", 0.55, 5.6, (0, 0, 0.3), "grey", verts=12, rot=(0, math.radians(90), 0))
     bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.55, depth=0.9,
                                     location=(3.25, 0, 0.3), rotation=(0, math.radians(90), 0))
@@ -423,11 +423,13 @@ def build_uboat(sc):                              # 8x4 tiles: 64x32 Mode 0 px, 
     box("periscope", (0.06, 0.06, 0.6), (-0.1, 0, 2.0), "black")
     box("gun", (0.6, 0.08, 0.08), (1.1, 0, 1.0), "black")
     box("number", (0.5, 0.52, 0.2), (-0.3, 0, 1.15), "white")
-    for ob in sc.objects:                            # modelled at 4x2 tiles: x2
+    bpy.ops.object.empty_add(location=(0, 0, 0))     # modelled at 4x2 tiles:
+    rig = bpy.context.active_object                  # 4x as long, 3x as wide/tall
+    for ob in sc.objects:
         if ob.type == "MESH":
-            ob.location = ob.location * 2
-            ob.scale = ob.scale * 2
-    frame_camera(sc, 64, 32)
+            ob.parent = rig
+    rig.scale = (4, 3, 3)
+    frame_camera(sc, 128, 48)
 
 
 def build_trap(sc):                               # bear trap, in a 12x16 sprite cell

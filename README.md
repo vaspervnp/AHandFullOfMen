@@ -119,8 +119,9 @@ tick the radio tower falls. Things that make this possible:
 - HUD text redraws only the characters that changed, and portraits only
   when their highlight or health changes.
 - Path searches run in idle time (see Movement).
-- When the tower falls, only its tiles are redrawn and re-entered into
-  the walk grids.
+- When the tower falls, only its tiles are redrawn. Each path search
+  builds its walk grid straight from the live map, a few rows per idle
+  slice, so map changes need no grid upkeep.
 
 Scrolling still means redrawing the whole view, which takes about 5 frames
 of work. That work is spread over the hidden buffer, four tile rows per
