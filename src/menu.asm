@@ -21,6 +21,16 @@ menu_run:
   ld c,MENU_PROMPT_ROW
   jp page_wait_fire
 
+; Briefing page for (mis): objectives and what the squad can do.
+briefing_run:
+  call page_begin
+  call menu_mission
+  ld hl,(mis+MIS_BRIEFING)
+  call page_lines
+  ld hl,txt_brief_go
+  ld c,MENU_PROMPT_ROW+12
+  jp page_wait_fire
+
 ; Mission name + briefing (rows 8, 9) for (cur_mission).
 menu_mission:
   ld b,8

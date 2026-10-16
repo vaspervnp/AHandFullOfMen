@@ -181,4 +181,5 @@ MIS_TXT_HUD1    equ 22          ; HUD objective before / after the blast (dw)
 MIS_TXT_HUD2    equ 24
 MIS_TXT_OBJ     equ 26          ; debrief checklist line, 26 chars (dw)
 MIS_GUARDS      equ 28          ; sentries, for the debrief tally
-MIS_SIZE        equ 29
+MIS_BRIEFING    equ 29          ; briefing page lines (dw, page_lines format)
+MIS_SIZE        equ 31

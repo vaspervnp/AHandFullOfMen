@@ -227,6 +227,21 @@ def check_t28_mission_select(r):
     assert r.ent(1, "role") == ROLE_SAPPER, "Mission 2's squad not spawned"
 
 
+def check_t29_m2_escape(r):
+    assert r.ent(0, "flags") & EF_BOARDED, f"Green Beret at {r.ent(0, 'x')},{r.ent(0, 'y')}, not in the truck"
+    assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
+
+
+def check_t30_m2_route_in(r):
+    ok, pos = near(r, 1, 98, 79)
+    assert ok, f"Sapper at {pos}, never reached the fuel tanks (98,79)"
+
+
+def check_t31_m2_route_out(r):
+    ok, pos = near(r, 0, 10, 20)
+    assert ok, f"Green Beret at {pos}, never reached the truck (10,20)"
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

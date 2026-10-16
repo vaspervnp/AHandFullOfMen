@@ -33,8 +33,9 @@ On a real CPC or in an emulator: insert `build/handful_of_men.dsk` and type
 | Esc | back to the title menu |
 
 The title menu lists these shortcuts too. Keys 1 and 2 on the menu pick the
-mission, and Space or Fire starts it. Accomplishing a mission moves the
-menu on to the next one.
+mission. Space or Fire opens its briefing (objectives, and what each
+commando's D and G do), and pressing it again starts the mission.
+Accomplishing a mission moves the menu on to the next one.
 
 ## Mission 1: Baptism of Fire
 

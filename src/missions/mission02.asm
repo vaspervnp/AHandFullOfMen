@@ -57,7 +57,7 @@ M02_DEPOT_COL   equ 23          ; 3x2 depot stamp, top-left tile
 M02_DEPOT_ROW   equ 6
 M02_DEPOT_X     equ M02_DEPOT_COL*4+6       ; centre of its base (world)
 M02_DEPOT_Y     equ (M02_DEPOT_ROW+2)*8-2
-M02_TRUCK_X0    equ 0           ; truck footprint: cols 0-2, rows 0-1
+M02_TRUCK_X0    equ 0           ; truck: cols 0-2, rows 0-1; board from row 2 too
 M02_TRUCK_X1    equ 3*4-1
 M02_TRUCK_Y0    equ 0
-M02_TRUCK_Y1    equ 2*8-1
+M02_TRUCK_Y1    equ 3*8-1       ; (the map edge keeps feet off rows 0-1)

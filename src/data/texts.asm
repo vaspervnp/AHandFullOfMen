@@ -52,6 +52,8 @@ menu_lines:
   db 22, PEN_TEXT,   "ESC                 BACK TO MENU    ",0
   db 24, PEN_SNOW,   "REVIVE8BIT 2026",0
   db &FF
+txt_brief_go:
+  db "PRESS SPACE OR FIRE TO GO IN",0
 txt_menu_start:
   db "PRESS SPACE OR FIRE TO START",0
 

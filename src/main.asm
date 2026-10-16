@@ -68,6 +68,7 @@ start:
 title:
   if TEST_MENU || (TEST==0)
   call menu_run
+  call briefing_run
   endif
 mission_start:
   call palette_black
