@@ -13,6 +13,7 @@ and the Caprice32 snap for the emulator tests.
 ./build.sh            # assets -> rasm -> build/handful_of_men.{sna,dsk} -> tests
 ./build.sh --no-test  # build only
 tools/play            # play the snapshot in Caprice32 (or: tools/play cpcemu)
+tools/release.sh      # build + all tests + fuzz soak -> dist/*.dsk, *.sna, SHA256SUMS
 ```
 
 On a real CPC or in an emulator: insert `build/handful_of_men.dsk` and type
@@ -92,7 +93,11 @@ tick the radio tower falls. Things that make this possible:
 - When the tower falls, only its tiles are redrawn and re-entered into
   the walk grids.
 
-A scroll of the camera still redraws the whole view (about 3–4 frames).
+Scrolling still means redrawing the whole view, which takes about 5 frames
+of work. That work is spread over the hidden buffer, four tile rows per
+tick, while the old picture stays on screen. The new view is shown when
+complete, and the camera waits for it before moving again. The game keeps
+running at 25 Hz; only the picture updates more slowly while scrolling.
 
 ## Layout
 
@@ -171,6 +176,11 @@ jumps to `&0000` when the script ends. Each scenario runs twice:
 - in Caprice32 (`tools/cpcemu`, headless), which takes a screenshot
 
 The disk image is also booted with `RUN"DISC` and screenshotted.
+
+`tests/fuzz.py --seeds 1-8 --ticks 3000` is a soak test. It plays the game
+with random stick, fire and command keys (ESC included, so game overs and
+the menu are played through too) and fails on a stray PC or SP, a hang, an
+early stop, a damaged stack canary or a corrupt entity table.
 
 `tests/frames.py` reports frames per game tick for every scenario: from
 cpcsim, or exactly from Caprice32 with `--cap32`. For the Caprice32 numbers,

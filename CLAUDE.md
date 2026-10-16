@@ -2,6 +2,9 @@
 
 - Build + test: `./build.sh` (needs a few minutes for the Caprice32 runs);
   quick loop: `./build.sh --no-test && tests/run_tests.sh --no-cap32`.
+- Soak: `tests/fuzz.py --seeds 1-8 --ticks 3000` (random play, crash and
+  hang detection). Release: `tools/release.sh` (build, all tests, fuzz,
+  then `dist/*.dsk|sna` + SHA256SUMS).
 - Debug a scenario: `cd build && python3 ../tools/cpcsim.py tests/t01_boot.sna
   --sym tests/t01_boot.sym --peek tick:2 --trace 40 --screen out.png`.
 - Frame budget: `tests/frames.py` (cpcsim at `--slow 1.25`, which matches
@@ -60,6 +63,10 @@
   Anything drawn into the play area must go through it (draw items or
   tiles marked dirty), or the `REF_RENDER` comparison in tests/check.py
   fails.
+- A full view redraw (camera scroll) is sliced over ticks (`REDRAW_SLICE`
+  rows each); `render_frame` returns NC until the back buffer is complete
+  and the main loop only flips on carry. The camera can't move while
+  `redraw_row` is nonzero.
 - Path searches are background jobs run from `pf_idle` (inside
   `wait_vsync` / `wait_frame`). `path_to` returns at once with a pending
   one-point path, so never assume a route exists the tick it's requested.

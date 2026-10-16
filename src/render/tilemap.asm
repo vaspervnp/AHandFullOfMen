@@ -80,35 +80,66 @@ map_cam_ptr:
 
 ; Redraw the whole 20x18 tactical area into the back buffer.
 draw_view:
-  call map_cam_ptr
   ld c,0
-.row:
-  ld b,0
-.col:
+  ld b,VIEW_TH
+; Draw B view rows starting at row C into the back buffer.
+draw_view_rows:
   push bc
-  push hl
-  ld a,(hl)
-  push af
-  call tile_screen_addr
-  pop af
-  push de
-  call tile_gfx
-  pop de
-  call draw_tile_de
-  pop hl
+  call tile_screen_addr_row     ; DE = screen address of (0, C)
+  ld a,(cam_y)                  ; IX = map cell of (0, C)
+  add a,c
+  ld l,a
+  ld h,0
+  add hl,hl
+  ld bc,map_row_offs
+  add hl,bc
+  ld c,(hl)
   inc hl
-  pop bc
-  inc b
-  ld a,b
-  cp VIEW_TW
+  ld b,(hl)
+  ld hl,map_buf
+  add hl,bc
+  ld a,(cam_x)
+  ld c,a
+  ld b,0
+  add hl,bc
+  push hl
+  pop ix
+  ld a,VIEW_TW
+.col:
+  push af
+  ld a,(ix+0)                   ; HL = tiles + id * 32 (tiles is page aligned)
+  inc ix
+  rrca
+  rrca
+  rrca
+  ld l,a
+  and &1F
+  add a,tiles>>8
+  ld h,a
+  ld a,l
+  and &E0
+  ld l,a
+  push de
+  call draw_tile_de
+  pop de
+  ld a,e                        ; next tile: 4 bytes right
+  add a,4
+  ld e,a
+  jr nc,.nc
+  inc d
+.nc:
+  pop af
+  dec a
   jr nz,.col
-  ld de,MAP_W-VIEW_TW
-  add hl,de
+  pop bc
   inc c
-  ld a,c
-  cp VIEW_TH
-  jr nz,.row
+  djnz draw_view_rows
   ret
+
+; C = view row -> DE = back buffer address of its first tile
+tile_screen_addr_row:
+  ld b,0
+  jp tile_screen_addr
 
 ; ---------------------------------------------------------------------------
 ; Dirty tiles. Each screen buffer has a bitmap of the 20x18 view tiles that

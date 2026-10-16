@@ -38,5 +38,17 @@ if [[ $CAP32 == 1 ]]; then
   else
     echo "FAIL dsk_boot"; fail=1
   fi
+  # ... and into the mission: SPACE at the menu, then the HUD must be up
+  if tools/cpcemu -timeout 200 -nowait -keys "run\"disc"$'\n'"$PAD $PAD" \
+       -shot "$PWD/build/tests/dsk_play.png" build/handful_of_men.dsk >/dev/null \
+     && python3 -c "
+from PIL import Image
+im = Image.open('build/tests/dsk_play.png').convert('RGB')
+r, g, b = im.getpixel((100, 470))          # HUD panel, below the portraits
+raise SystemExit(0 if b > 200 and r < 60 and g < 60 else 1)"; then
+    echo "ok   dsk_play (see build/tests/dsk_play.png)"
+  else
+    echo "FAIL dsk_play"; fail=1
+  fi
 fi
 exit $fail

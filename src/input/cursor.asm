@@ -48,6 +48,9 @@ cur_left:
   jr nc,.ok
   xor a
   ld (cursor_x),a
+  ld a,(redraw_row)             ; finish drawing the last scroll first
+  or a
+  ret nz
   ld a,(cam_x)
   or a
   ret z
@@ -68,6 +71,9 @@ cur_right:
   jr c,.ok
   ld a,CUR_MAX_X
   ld (cursor_x),a
+  ld a,(redraw_row)             ; finish drawing the last scroll first
+  or a
+  ret nz
   ld a,(cam_x)
   cp CAM_MAX_X
   ret z
@@ -88,6 +94,9 @@ cur_up:
   jr nc,.ok
   xor a
   ld (cursor_y),a
+  ld a,(redraw_row)             ; finish drawing the last scroll first
+  or a
+  ret nz
   ld a,(cam_y)
   or a
   ret z
@@ -108,6 +117,9 @@ cur_down:
   jr c,.ok
   ld a,CUR_MAX_Y
   ld (cursor_y),a
+  ld a,(redraw_row)             ; finish drawing the last scroll first
+  or a
+  ret nz
   ld a,(cam_y)
   cp CAM_MAX_Y
   ret z

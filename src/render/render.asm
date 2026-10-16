@@ -9,12 +9,18 @@
 ;   1. items that moved / changed frame / vanished mark old + new tiles dirty
 ;      (to be restored from the map)
 ;   2. any item over a dirty or touched tile must be redrawn; drawing it over
-;      itself is harmless, but it covers whatever overlaps it, so its tiles
-;      become touched (repeat until nothing new: sprites stay in Y order)
+;      itself is harmless, but it covers what is drawn after it there, so
+;      its tiles become touched (one pass in draw order)
 ;   3. restore dirty tiles, re-plot cone dots on them, redraw marked items
 ; A freshly cast cone is plotted onto the screen as it is (its tiles only
 ; become touched), so only erasing an old cone costs tile restores.
-; A camera move redraws the whole view and every item.
+; A camera move redraws the whole view and every item, REDRAW_SLICE tile
+; rows per tick (the camera stays put meanwhile, see cursor.asm).
+  if REF_RENDER
+REDRAW_SLICE    equ VIEW_TH
+  else
+REDRAW_SLICE    equ 4
+  endif
 ; ===========================================================================
 
 ; draw item / cache entry (16 bytes)
@@ -49,6 +55,7 @@ back_state:
   ld hl,dirty_80
   ret
 
+; -> carry if the back buffer is complete and should be shown
 render_frame:
   call sprites_off
   call back_state
@@ -67,12 +74,34 @@ render_frame:
   and b
   ld (full_redraw),a
   jr z,.items
+  ; full redraw, REDRAW_SLICE tile rows per call: the old picture stays on
+  ; screen (no flip) until the new one is complete
+  push bc
+  ld a,(redraw_row)
+  ld c,a
+  ld a,VIEW_TH
+  sub c
+  cp REDRAW_SLICE+1
+  jr c,.last
+  ld b,REDRAW_SLICE
+  call draw_view_rows
+  ld a,c
+  ld (redraw_row),a
+  pop bc
+  call sprites_off
+  or a                          ; NC: not finished, don't flip
+  ret
+.last:
+  ld b,a
+  call draw_view_rows
+  xor a
+  ld (redraw_row),a
+  pop bc
   ld a,b
   cpl
   ld hl,view_dirty
   and (hl)
   ld (hl),a
-  call draw_view
   call dirty_all
 .items:
   call back_state               ; B = this buffer's bit
@@ -113,7 +142,15 @@ render_frame:
   ld (hl),a
   inc l
   rend
-  jp sprites_off
+  call sprites_off
+  scf                           ; frame complete: flip
+  ret
+
+; Render until the back buffer is complete (mission start).
+render_full:
+  call render_frame
+  jr nc,render_full
+  ret
 
 ; Full redraw: every tile is dirty and nothing is cached as drawn.
 dirty_all:
@@ -388,36 +425,26 @@ diff_items:
   djnz .g
   ret
 
-; Flag every item over a dirty or touched tile and touch its whole
-; footprint, until no new item gets flagged.
+; Flag every item over a dirty or touched tile and touch its footprint.
+; One pass in draw order is enough: redrawing an item over itself only
+; covers the items drawn after it, never those before.
 expand_dirty:
-  xor a
-  ld (exp_changed),a
   ld iy,item_buf
   ld a,(item_count)
   or a
   ret z
   ld b,a
 .it:
-  ld a,(iy+IT_REDRAW)
-  or a
-  jr nz,.next
   push bc
-  call test_rec
-  jr z,.clean
+  call test_rec                 ; changed items hit their own dirty tiles
+  jr z,.next
   ld (iy+IT_REDRAW),1
   call mark_touch
-  ld a,1
-  ld (exp_changed),a
-.clean:
-  pop bc
 .next:
+  pop bc
   ld de,IT_SIZE
   add iy,de
   djnz .it
-  ld a,(exp_changed)
-  or a
-  jr nz,expand_dirty
   ret
 
 ; Blit the flagged items, back to front.

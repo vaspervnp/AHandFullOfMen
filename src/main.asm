@@ -23,6 +23,15 @@ TEST equ 0
   ifndef REF_RENDER
 REF_RENDER equ 0                ; tests: full redraw every frame (reference)
   endif
+  ifndef FUZZ
+FUZZ equ 0                      ; tests/fuzz.py: random input instead of a script
+  endif
+  ifndef FUZZ_SEED
+FUZZ_SEED equ 1
+  endif
+  ifndef FUZZ_TICKS
+FUZZ_TICKS equ 3000
+  endif
   ifndef TEST_MENU
 TEST_MENU equ 0                 ; test scenarios skip the menu unless set
   endif
@@ -69,9 +78,9 @@ mission_start:
   call test_setup
   endif
   ; draw both buffers before showing anything
-  call render_frame
+  call render_full
   call flip
-  call render_frame
+  call render_full
   call flip
   ld hl,pal_norway
   call palette_set
@@ -116,14 +125,17 @@ main_loop:
   ld hl,tick
   inc (hl)
   call render_frame
-  call flip
-  jr main_loop
+  call c,flip                   ; a sliced full redraw shows when complete
+  jp main_loop
 
   if TEST
 ; Scripted input for headless regression tests: (ticks, joy_state, key)
 ; from the scenario's SCENARIO macro (tests/tNN_*.asm). When the script
 ; runs out we jump to &0000, where CAP32_WAITBREAK / cpcsim stop.
 test_input:
+  if FUZZ
+  jp fuzz_input
+  endif
   ld hl,(test_ptr)
   ld a,(hl)
   or a
@@ -228,6 +240,94 @@ test_end:
   ret
 test_ptr: dw test_script
 test_count: db 0
+
+  if FUZZ
+; Random play for tests/fuzz.py: every few ticks a new stick direction,
+; fire now and then, and occasionally a command key (ESC included, so the
+; menu gets exercised too). Runs FUZZ_TICKS input steps, then ends the
+; test like a script would. Seeded with -DFUZZ_SEED.
+fuzz_input:
+  ld hl,(fuzz_count)
+  dec hl
+  ld (fuzz_count),hl
+  ld a,h
+  or l
+  jp z,test_end
+  ld hl,fuzz_hold
+  dec (hl)
+  jr nz,.apply
+  call fuzz_rand
+  and 15
+  inc a
+  ld (fuzz_hold),a              ; hold it 1..16 ticks
+  call fuzz_rand
+  ld c,a
+  and &0F                       ; directions (opposites cancel out)
+  ld b,a
+  ld a,c
+  and &70
+  jr nz,.nofire                 ; fire 1 time in 8
+  set JOY_FIRE,b
+.nofire:
+  ld a,b
+  ld (fuzz_joy),a
+  call fuzz_rand
+  ld c,a
+  and &E0
+  ld a,&FF
+  jr nz,.key                    ; a key 1 time in 8
+  ld a,c
+  and 15
+  ld hl,fuzz_keys
+  add a,l
+  ld l,a
+  jr nc,.k
+  inc h
+.k:
+  ld a,(hl)
+.key:
+  ld (fuzz_key),a
+.apply:
+  ld a,(fuzz_joy)
+  ld (joy_state),a
+  ld a,(fuzz_key)
+  cp &FF
+  ret z
+  push af
+  ld a,&FF                      ; a key is a single tap
+  ld (fuzz_key),a
+  pop af
+  jp test_press
+
+; -> A = random byte (xorshift 7/9/8)
+fuzz_rand:
+  ld hl,(fuzz_state)
+  ld a,h
+  rra
+  ld a,l
+  rra
+  xor h
+  ld h,a
+  ld a,l
+  rra
+  ld a,h
+  rra
+  xor l
+  ld l,a
+  xor h
+  ld h,a
+  ld (fuzz_state),hl
+  ret
+
+fuzz_keys:
+  db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_V,KEY_RETURN
+  db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_V,KEY_ESC
+fuzz_state: dw FUZZ_SEED or 1
+fuzz_count: dw FUZZ_TICKS
+fuzz_hold:  db 1
+fuzz_joy:   db 0
+fuzz_key:   db &FF
+  endif
 J_U equ 1<<JOY_UP
 J_D equ 1<<JOY_DOWN
 J_L equ 1<<JOY_LEFT
@@ -328,13 +428,13 @@ bl_fullw:       db 0
 cur_dirty:      dw 0
 cur_cache:      dw 0
 full_redraw:    db 0
+redraw_row:     db 0            ; next row of a sliced full redraw
 item_count:     db 0
 item_wr:        dw 0
 cur_slot:       db 0
 cur_bank:       db 0
 ce_ptr:         dw 0
 render_serial:  db 0
-exp_changed:    db 0
 hp_idx:         db 0
 hp_x:           db 0
 hp_frame:       db 0
