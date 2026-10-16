@@ -135,7 +135,7 @@ destroy_tower:
   djnz .row
   ld a,3
   ld (view_dirty),a
-  ret
+  jp path_map_changed
 
 ; Every guard drops what it is doing and joins the fight.
 alarm_all:

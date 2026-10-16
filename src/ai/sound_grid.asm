@@ -46,14 +46,17 @@ noise_emit:
   ld a,(noise_r)
   cp b
   jr c,.next
-  ; go and look
+  ; go and look, if there is a way there
+  ld a,(noise_x)
+  ld b,a
+  ld a,(noise_y)
+  ld c,a
+  ld a,TF_SOLID|TF_WATER
+  call path_to
+  jr nc,.next
   ld (ix+ent.ai),AI_INVESTIGATE
   ld a,(noise_t)
   ld (ix+ent.ai_timer),a
-  ld a,(noise_x)
-  ld (ix+ent.tx),a
-  ld a,(noise_y)
-  ld (ix+ent.ty),a
   ld (ix+ent.state),ST_WALK
   ld (ix+ent.timer),0
 .next:

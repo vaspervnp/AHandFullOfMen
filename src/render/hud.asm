@@ -9,6 +9,7 @@ PORTRAIT_Y      equ 152
 PORTRAIT_W      equ 8
 PORTRAIT_H      equ 24
 TEXT_X          equ 34
+HUD_CACHE_ROW   equ 32          ; ink + up to 30 chars + 0
 
 hud_mark_dirty:
   ld a,3
@@ -42,6 +43,7 @@ hud_update:
   and (hl)
   ld (hl),a
   call hud_background
+  call hud_cache_clear
   jr hud_contents
 
 hud_background:
@@ -98,9 +100,8 @@ hud_contents:
   inc hl
   ld h,(hl)
   ld l,a
-  ld b,TEXT_X
   ld c,19
-  call print_at
+  call hud_print
 
   call sel_ent
   ld hl,txt_dead
@@ -118,9 +119,8 @@ hud_contents:
   jr nz,.mode
   ld hl,txt_stand
 .mode:
-  ld b,TEXT_X
   ld c,20
-  call print_at
+  call hud_print
 
   ; weapon line
   ld a,(sel_cmd)
@@ -136,9 +136,8 @@ hud_contents:
   ld (txt_kit_sniper_n),a
   ld hl,txt_kit_sniper
 .kit:
-  ld b,TEXT_X
   ld c,21
-  call print_at
+  call hud_print
 
   ld hl,txt_objective
   ld a,(tower_down)
@@ -146,9 +145,8 @@ hud_contents:
   jr z,.obj
   ld hl,txt_objective2
 .obj:
-  ld b,TEXT_X
   ld c,22
-  call print_at
+  call hud_print
 
   ld a,(game_over)
   or a
@@ -174,9 +172,8 @@ hud_contents:
   call text_ink
   pop hl
 .st:
-  ld b,TEXT_X
   ld c,23
-  jp print_at
+  jp hud_print
 
 ; A = 0..99 -> num_buf = two ASCII digits (leading zero kept)
 num2:
@@ -373,6 +370,7 @@ blit_plain:
 
 ; A = ink pen, paper = (text_paper)
 text_ink:
+  ld (text_cur_ink),a
   ld e,a
   ld d,0
   ld hl,pen_left
@@ -411,6 +409,117 @@ text_ink:
   ld a,b
   or c
   ld (hl),a                     ; 11
+  ; text_words[v] = the two screen bytes for glyph row nibble v
+  ld de,text_words
+  ld c,0
+.w:
+  ld a,c
+  rrca
+  rrca
+  and 3
+  ld hl,text_pairs
+  add a,l
+  ld l,a
+  ld a,(hl)
+  ld (de),a
+  inc de
+  ld a,c
+  and 3
+  ld hl,text_pairs
+  add a,l
+  ld l,a
+  ld a,(hl)
+  ld (de),a
+  inc de
+  inc c
+  bit 4,c
+  jr z,.w
+  ret
+
+; HL = string, C = HUD row (19..23): print it at TEXT_X unless this buffer
+; already shows exactly that text in the current ink.
+hud_print:
+  push hl
+  call hud_cache_ptr            ; DE = cache entry (ink, text...)
+  pop hl
+  ld a,(de)
+  push hl
+  ld hl,text_cur_ink
+  cp (hl)
+  pop hl
+  jr nz,.diff
+  push hl
+  push de
+  inc de
+.cmp:
+  ld a,(de)
+  cp (hl)
+  jr nz,.diff2
+  or a
+  jr z,.same
+  inc hl
+  inc de
+  jr .cmp
+.same:
+  pop de
+  pop hl
+  ret
+.diff2:
+  pop de
+  pop hl
+.diff:
+  ld a,(text_cur_ink)
+  ld (de),a
+  inc de
+  push hl
+  ld b,HUD_CACHE_ROW-1
+.copy:
+  ld a,(hl)
+  ld (de),a
+  inc hl
+  inc de
+  or a
+  jr z,.copied
+  djnz .copy
+.copied:
+  pop hl
+  ld b,TEXT_X
+  jp print_at
+
+; C = HUD row -> DE = this back buffer's cache entry for it
+hud_cache_ptr:
+  ld a,c
+  sub 19
+  ld l,a                        ; * HUD_CACHE_ROW (32)
+  ld h,0
+  add hl,hl
+  add hl,hl
+  add hl,hl
+  add hl,hl
+  add hl,hl
+  ld a,(back_hi)
+  cp &C0
+  ld de,hud_cache_c0
+  jr z,.b
+  ld de,hud_cache_80
+.b:
+  add hl,de
+  ex de,hl
+  ret
+
+; Forget what this back buffer shows (after repainting the panel).
+hud_cache_clear:
+  ld a,(back_hi)
+  cp &C0
+  ld hl,hud_cache_c0
+  jr z,.b
+  ld hl,hud_cache_80
+.b:
+  ld b,HUD_CACHE_ROW*5
+.lp:
+  ld (hl),&FF
+  inc hl
+  djnz .lp
   ret
 
 ; HL = 0-terminated string, B = x byte, C = character row
@@ -437,23 +546,21 @@ print_at:
   pop hl
   ld b,8
 .line:
+  ld a,(hl)                     ; row nibble -> text_words entry
+  inc hl
   push hl
+  add a,a
+  add a,text_words and &FF      ; table is 32-byte aligned: no carry
+  ld l,a
+  ld h,text_words>>8
   ld a,(hl)
-  rrca
-  rrca
-  and 3
-  call text_pair
   ld (de),a
+  inc l
   inc e
-  pop hl
   ld a,(hl)
-  and 3
-  push hl
-  call text_pair
   ld (de),a
   dec e
   pop hl
-  inc hl
   ld a,d
   add a,8
   ld d,a
@@ -463,18 +570,6 @@ print_at:
   inc b
   inc b
   jr .ch
-
-text_pair:
-  push hl
-  ld hl,text_pairs
-  add a,l
-  ld l,a
-  jr nc,.nc
-  inc h
-.nc:
-  ld a,(hl)
-  pop hl
-  ret
 
 ; HL = string, C = character row: print centred
 print_center:

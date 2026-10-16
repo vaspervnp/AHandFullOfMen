@@ -19,6 +19,12 @@ mission_load:
   ld bc,MAX_ENTS*ENT_SIZE-1
   ld (hl),0
   ldir
+  call path_map_changed
+  ld hl,path_table              ; and every unit's route
+  ld de,path_table+1
+  ld bc,PATH_SLOTS*PATH_SLOT_SIZE-1
+  ld (hl),0
+  ldir
   pop hl
   xor a
 .spawn:

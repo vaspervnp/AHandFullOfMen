@@ -77,7 +77,11 @@ ai_do_suspicious:
 ai_resume_patrol:
   ld (ix+ent.ai),AI_PATROL
   ld (ix+ent.state),ST_WALK
-  jp guard_load_waypoint
+  call guard_load_waypoint
+  ld b,(ix+ent.tx)              ; find the way back to the patrol route
+  ld c,(ix+ent.ty)
+  ld a,TF_SOLID|TF_WATER
+  jp path_to
 
 ai_do_alarm:
   ld a,(ix+ent.ai_seen)
@@ -143,27 +147,17 @@ raise_alarm:
 ; -> carry set and A = entity index of the first thing noticed.
 ; ---------------------------------------------------------------------------
 guard_look:
+  ld iy,ent_table
   xor a
 .lp:
   ld (look_idx),a
-  push ix
-  call ent_ptr
-  push ix
-  pop iy
-  pop ix
-  ld a,(iy+ent.type)
-  or a
-  jr z,.next
-  push iy
-  pop hl
-  push ix
-  pop de
-  or a
-  sbc hl,de
+  cp (ix+ent.idx)
   jr z,.next                    ; itself
   ld a,(iy+ent.type)
   cp ET_COMMANDO
   jr z,.cmd
+  cp ET_GUARD
+  jr nz,.next
   ; another guard: only interesting if dead
   bit EF_DEAD,(iy+ent.flags)
   jr z,.next
@@ -177,6 +171,8 @@ guard_look:
   call guard_sees_iy
   jr c,.found
 .next:
+  ld de,ENT_SIZE
+  add iy,de
   ld a,(look_idx)
   inc a
   cp MAX_ENTS

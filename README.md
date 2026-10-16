@@ -33,6 +33,44 @@ On a real CPC or in an emulator: insert `build/handful_of_men.dsk` and type
 
 The title menu lists these shortcuts too. Space or Fire starts the mission.
 
+## Mission 1: Baptism of Fire
+
+Destroy the radio tower inside the compound, then get every surviving
+commando into the truck at the road junction. Only a bullet sets off a
+barrel, and the blast must be close to the tower's base. Explosions raise
+the base alarm, and you then have 60 seconds before reinforcements arrive.
+Finishing without ever raising the alarm counts as a bonus objective.
+
+| Commando | Abilities |
+| --- | --- |
+| Tiny, Green Beret | knife (silent, melee), radio decoy, drags barrels and bodies |
+| Fins, Marine | swims, and can't be seen underwater; harpoon (silent, short range) |
+| Duke, Sniper | rifle: long range, needs a clear line of sight, 5 rounds, loud |
+
+## Stealth rules
+
+- Guards see in a 60° cone. In the close zone they spot anything,
+  including crawling commandos and bodies. In the far zone they only spot
+  commandos standing up. Trees, rocks and buildings block their view.
+- A spotted commando gets 1.5 s of grace (`!`). After that the guard opens
+  fire, the siren sounds, and every guard joins the fight.
+- Walking upright on snow is audible nearby. Guards come to investigate
+  (`?`) for about 10 s, then go back to their patrol. The decoy draws guards
+  from further away and holds them for about 25 s.
+
+## Movement
+
+Commandos route around trees, rocks, buildings, fences and water, so
+clicking behind an obstacle walks around it. The Marine swims instead. A
+click nobody can reach is ignored. When a commando is ordered to attack,
+he re-plans his route as the target moves. Guards investigating a noise,
+and returning to their patrol afterwards, route around obstacles too.
+
+If nothing is in the way, the unit just walks straight there. Otherwise
+the game floods outward from the clicked tile on the 40×32 grid (8-way,
+no corner cutting) until it reaches the walker, then keeps only the turns
+as waypoints.
+
 ## Layout
 
 ```
@@ -42,7 +80,7 @@ src/crtc/                video init, palette, VSYNC interrupt
 src/render/              tile engine, masked blitter, renderer, HUD
 src/input/               keyboard matrix, joystick/QAOP, cursor
 src/entities/            entity helpers, commandos, guards, barrels/explosions/dragging
-src/ai/                  vision geometry + LOS, guard state machine, noise
+src/ai/                  vision geometry + LOS, guard state machine, noise, pathfinding
 src/audio/               AY-3-8912 access, sound effects
 src/missions/            mission spawn and patrol data
 src/menu.asm             title menu (banner + keyboard shortcuts)

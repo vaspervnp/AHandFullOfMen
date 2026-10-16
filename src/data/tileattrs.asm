@@ -8,6 +8,7 @@ TILE_TOWER0     equ 24
 TILE_SNOW       equ 0
 TILE_SCORCH     equ 42
 
+  align 256                     ; pathfinder indexes it by H=page, L=tile
 tile_attrs:
   db TF_SNOW                    ; 0  snow
   db TF_SNOW                    ; 1  snow_speck

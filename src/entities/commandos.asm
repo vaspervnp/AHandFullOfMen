@@ -17,6 +17,7 @@ HARPOON_RANGE   equ 36          ; visual units
 RIFLE_RANGE     equ 112
 RIFLE_AMMO      equ 5
 ATTACK_TICKS    equ 8
+CHASE_REPLAN    equ 12          ; ticks between route updates when chasing
 
 ; Player input -> orders. Called once per game tick.
 commandos_input:
@@ -99,6 +100,7 @@ cmd_click:
   inc a
   ld (ix+ent.aux2),a            ; 1 + target entity index
   ld (ix+ent.state),ST_WALK
+  ld (ix+ent.timer),0           ; plan a route to it on the next tick
   ret
 .ground:
   call sel_ent
@@ -111,8 +113,9 @@ cmd_click:
   call cmd_block_flags
   and e
   ret nz                        ; can't walk there
-  ld (ix+ent.tx),b
-  ld (ix+ent.ty),c
+  call cmd_block_flags
+  call path_to                  ; route around obstacles
+  ret nc                        ; no way there
   ld (ix+ent.aux2),0
   ld (ix+ent.state),ST_WALK
   ret
@@ -198,12 +201,25 @@ cmd_walk:
 .alive:
   bit EF_DEAD,(iy+ent.flags)
   jr nz,.lost
-  ld a,(iy+ent.x)
-  ld (ix+ent.tx),a
-  ld a,(iy+ent.y)
-  ld (ix+ent.ty),a
   call cmd_in_reach
-  jr nc,.move
+  jr c,.strike
+  ; re-plan the chase every CHASE_REPLAN ticks (the target moves)
+  ld a,(ix+ent.timer)
+  or a
+  jr z,.replan
+  dec (ix+ent.timer)
+  jr .move
+.replan:
+  ld (ix+ent.timer),CHASE_REPLAN
+  ld b,(iy+ent.x)
+  ld c,(iy+ent.y)
+  call cmd_block_flags
+  call path_to
+  jr c,.move
+  ld (ix+ent.tx),b              ; no route: try walking straight at it
+  ld (ix+ent.ty),c
+  jr .move
+.strike:
   ld (ix+ent.state),ST_ATTACK
   ld (ix+ent.timer),ATTACK_TICKS
   res EF_CRAWL,(ix+ent.flags)
@@ -212,7 +228,7 @@ cmd_walk:
 .lost:
   ld (ix+ent.aux2),0
   ld (ix+ent.state),ST_IDLE
-  ret
+  jp path_clear
 .move:
   ; crawling or dragging moves at half speed
   ld a,(ix+ent.flags)
@@ -226,10 +242,19 @@ cmd_walk:
   call cmd_block_flags
   ld c,a
   call ent_step
-  jr z,.stop
+  jr z,.waypoint
+.moved:
   inc (ix+ent.anim)
   call drag_follow
   jp footsteps
+.waypoint:
+  call path_next                ; more of the route to walk?
+  ret nz
+  ld a,(ix+ent.aux2)            ; chasing: the target moved, plan again
+  or a
+  jr z,.stop
+  ld (ix+ent.timer),0
+  ret
 .stop:
   ld (ix+ent.state),ST_IDLE
   ld (ix+ent.aux2),0

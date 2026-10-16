@@ -41,6 +41,14 @@
   (black). The Lua pass converts through an opaque magenta key at index 16
   instead.
 
+## Game code rules
+- Any change to `map_buf` must call `path_map_changed`, which rebuilds the
+  pathfinder's walk grids (mission load and the tower falling already do).
+- Frame budget: 2 frames per game tick (25 Hz). Measure frames per tick
+  from `tick` changes in cpcsim. Known spikes: the first long detour
+  search costs ~4 extra frames; the compound scene during an alarm runs
+  at ~3 frames per tick.
+
 ## Hardware notes
 - Mode 0 byte layout: the left pixel's bits 0..3 sit in bits 7,3,5,1. The
   table in brief §4.3 is wrong.

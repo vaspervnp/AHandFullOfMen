@@ -300,7 +300,9 @@ cursor_gfx:
   pop de
   ret
 
-; Fill draw_list with live entity indices sorted by feet Y (insertion sort).
+; Fill draw_list with visible entity indices sorted by feet Y (insertion
+; sort on a key array; draw_list sits MAX_ENTS bytes after draw_keys).
+; Corpses lie flat, so they sort 8 lines earlier.
 sort_entities:
   xor a
   ld (draw_count),a
@@ -312,41 +314,51 @@ sort_entities:
   jr z,.skip
   bit EF_BOARDED,(ix+ent.flags)
   jr nz,.skip
-  ; insert index C keyed by Y
+  ld a,(ix+ent.y)
+  bit EF_DEAD,(ix+ent.flags)
+  jr z,.key
+  sub 8
+  jr nc,.key
+  xor a
+.key:
+  ld (sort_key),a
   ld hl,draw_count
   ld b,(hl)
   inc (hl)
   ld a,b
-  ld hl,draw_list
+  ld hl,draw_keys
   add a,l
   ld l,a
-  jr nc,.nc
+  jr nc,.ins
   inc h
-.nc:
-  ; HL -> slot b (end); shift larger keys right
-.ins:
+.ins:                           ; HL -> slot b; shift bigger keys right
   ld a,b
   or a
   jr z,.put
   dec hl
-  push hl
-  ld a,(hl)                     ; previous entity index
-  push bc
-  call ent_ptr_y                ; A = its Y
-  pop bc
-  pop hl
-  cp (ix+ent.y)
-  jr c,.put_after
-  jr z,.put_after
+  ld a,(sort_key)
+  cp (hl)
+  jr nc,.after                  ; key >= keys[b-1]: goes in slot b
   ld a,(hl)
   inc hl
   ld (hl),a
   dec hl
+  push hl
+  ld de,MAX_ENTS
+  add hl,de
+  ld a,(hl)
+  inc hl
+  ld (hl),a
+  pop hl
   dec b
   jr .ins
-.put_after:
+.after:
   inc hl
 .put:
+  ld a,(sort_key)
+  ld (hl),a
+  ld de,MAX_ENTS
+  add hl,de
   ld (hl),c
 .skip:
   ld de,ENT_SIZE
@@ -355,20 +367,6 @@ sort_entities:
   ld a,c
   cp MAX_ENTS
   jr nz,.scan
-  ret
-
-; A = entity index -> A = its Y (corpses sort first: they lie flat)
-ent_ptr_y:
-  push ix
-  call ent_ptr
-  ld a,(ix+ent.y)
-  bit EF_DEAD,(ix+ent.flags)
-  jr z,.alive
-  sub 8
-  jr nc,.alive
-  xor a
-.alive:
-  pop ix
   ret
 
 ; Show the back buffer and make the old front buffer the new back buffer.

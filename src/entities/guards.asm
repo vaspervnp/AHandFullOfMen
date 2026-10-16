@@ -49,6 +49,8 @@ guard_update:
   inc (ix+ent.anim)
   ret
 .arrived:
+  call path_next                ; following a route (investigating, returning)
+  ret nz
   ld (ix+ent.anim),0
   ld a,(ix+ent.ai)
   cp AI_INVESTIGATE
@@ -70,6 +72,7 @@ guard_update:
 
 ; Load the current waypoint (wrapping at &FF) into tx/ty.
 guard_load_waypoint:
+  call path_clear               ; patrol legs are authored straight lines
   call guard_route_ptr
   ld a,(ix+ent.aux)
   call hl_add_a

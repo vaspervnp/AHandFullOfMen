@@ -129,6 +129,31 @@ def check_t16_debrief(r):
     assert r.byte("game_over") == 2
 
 
+def near(r, i, x, y, tol_x=2, tol_y=4):
+    ex, ey = r.ent(i, "x"), r.ent(i, "y")
+    return abs(ex - x) <= tol_x and abs(ey - y) <= tol_y, (ex, ey)
+
+
+def check_t17_path_tree(r):
+    ok, pos = near(r, 0, 40, 172)
+    assert ok, f"Green Beret at {pos}, should have walked round the pine to (40,172)"
+
+
+def check_t18_river_detour(r):
+    ok, pos = near(r, 0, 60, 119)
+    assert ok, f"Green Beret at {pos}, should have detoured to (60,119)"
+
+
+def check_t19_marine_swim(r):
+    ok, pos = near(r, 1, 60, 119)
+    assert ok, f"Marine at {pos}, should have swum straight to (60,119)"
+
+
+def check_t20_unreachable(r):
+    assert (r.ent(0, "x"), r.ent(0, "y")) == (18, 239), "walked toward an unreachable spot"
+    assert r.ent(0, "state") == 0, "should have refused the order"
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

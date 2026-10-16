@@ -194,6 +194,7 @@ test_setup:
   include "ai/los.asm"
   include "ai/fsm.asm"
   include "ai/sound_grid.asm"
+  include "ai/pathfind.asm"
   include "audio/psg.asm"
   include "audio/sfx.asm"
   include "game.asm"
@@ -263,6 +264,11 @@ hp_x:           db 0
 hp_frame:       db 0
 hp_hp:          db 0
 text_pairs:     defs 4
+text_cur_ink:   db 0
+hud_cache_c0:   defs HUD_CACHE_ROW*5,&FF
+hud_cache_80:   defs HUD_CACHE_ROW*5,&FF
+  align 32
+text_words:     defs 32
 text_paper:     db PEN_HUD
 menu_blink:     db 0
 hud_bg:         db 0
@@ -285,8 +291,23 @@ noise_x:        db 0
 noise_y:        db 0
 noise_r:        db 0
 noise_t:        db 0
+pf_mask:        db 0
+pf_gx:          db 0
+pf_gy:          db 0
+pf_slot:        dw 0
+pf_goal:        dw 0
+pf_start:       dw 0
+pf_head:        dw 0
+pf_tail:        dw 0
+pf_cur:         dw 0
+pf_d:           db 0
+pf_col:         db 0
+pf_row:         db 0
+pf_lastdir:     db 0
 draw_count:     db 0
-draw_list:      defs MAX_ENTS
+sort_key:       db 0
+draw_keys:      defs MAX_ENTS
+draw_list:      defs MAX_ENTS       ; must follow draw_keys
 ent_route:      defs MAX_ENTS*2
 dirty_c0:       defs DIRTY_SIZE
 dirty_80:       defs DIRTY_SIZE
@@ -303,6 +324,12 @@ data_start:
   include "ui.asm"              ; generated: build/ui.asm
   include "mission01_map.asm"   ; generated: build/mission01_map.asm
 map_buf:        defs MAP_W*MAP_H
+path_table:     defs PATH_SLOTS*PATH_SLOT_SIZE
+path_dist:      defs PATH_W*PATH_H
+pf_cache_land:  defs PATH_W*PATH_H
+pf_cache_swim:  defs PATH_W*PATH_H
+  align 256                     ; pf_wrap detects the end by its page
+path_queue:     defs PATH_QUEUE_LEN*2
 data_end:
   assert data_end<=&8000
 
