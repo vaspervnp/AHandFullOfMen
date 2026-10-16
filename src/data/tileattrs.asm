@@ -1,6 +1,6 @@
 ; ===========================================================================
 ; Tile attribute flags, indexed by tile id (order = TILE_NAMES in
-; tools/gen_art.py)
+; tools/tiles_def.py)
 ; ===========================================================================
 
 TILE_RUBBLE     equ 32

@@ -74,9 +74,9 @@ def check_t06_menu(r):
 
 def check_t07_menu_screen(r):
     assert r.cpc.crtc[12] == 0x30, "menu should be on the &C000 screen"
-    # banner present (top line not plain background), text rows drawn
-    top = r.cpc.base_ram(0xC000, 80)
-    assert len(set(top)) > 2, "title banner missing"
+    # banner present: a line through the logo is not plain background
+    line = r.cpc.base_ram(0xC000 + (20 % 8) * 0x800 + (20 // 8) * 80, 80)
+    assert len(set(line)) > 3, "title banner missing"
 
 
 def check_t08_cone(r):

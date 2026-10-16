@@ -5,14 +5,27 @@ Usage: renders2sheet.py <renders_dir> <subject> <out.png>
 
 Reads <renders_dir>/<subject>/<pose>_<dir>.png (from tools/blender/hfm_render.py),
 pixelizes each to 12x16 Mode 0 pixels, adds the black outline and writes a
-37-cell sheet in the layout documented in tools/gen_art.py (west-facing
-frames are mirrors of the east-facing ones).
+37-cell sheet (one row of 12x16 cells):
+   0- 4 stand   N NE E SE S
+   5- 9 walk A  N NE E SE S
+  10-14 walk B  N NE E SE S
+  15-17 crawl A N E S
+  18-20 crawl B N E S
+  21-23 attack  N E S
+  24    corpse
+  25-27 stand   NW W SW   (mirrors of NE E SE)
+  28-30 walk A  NW W SW
+  31-33 walk B  NW W SW
+  34    crawl A W
+  35    crawl B W
+  36    attack  W
+The game picks frames through the ftab_* tables in src/data/luts.asm.
 """
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gen_art import BLK, BYEL, SKIN, Canvas, mirror, save_sheet  # noqa: E402
+from sheetlib import BLK, BYEL, SKIN, Canvas, mirror, save_sheet  # noqa: E402
 from pixelize import pixelize  # noqa: E402
 
 DIRS5 = ["N", "NE", "E", "SE", "S"]

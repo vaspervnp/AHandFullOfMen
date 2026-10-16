@@ -15,7 +15,7 @@ RASM="rasm -amper -v2 -I../src -I."
 rm -rf build && mkdir -p build
 
 # 2. Art assets -> Mode 0 data (assets/*.png are committed; regenerate the
-#    placeholders with tools/gen_art.py, or drop in Blender/Aseprite renders)
+#    tools/render_assets.sh from the Blender scenes and Aseprite documents)
 python3 tools/png2cpc.py assets/sprites build/sprites.asm
 python3 tools/png2cpc.py assets/sprites2 build/sprites2.asm
 python3 tools/png2cpc.py assets/tiles build/tiles.asm

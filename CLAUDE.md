@@ -32,6 +32,10 @@
   optimistic on timing.
 
 ## Art pipeline
+- Art sources: `assets/blender/*.blend` and `assets/aseprite/{terrain,font,cursor}.aseprite`.
+  Other `.aseprite` files are generated copies of the sheets. To rebuild a
+  Blender subject from code, delete its `.blend`. There's no procedural
+  2D art left (gen_art.py is gone).
 - `tools/render_assets.sh`: Blender 5.2 (Windows, through WSL interop, with
   `\\wsl.localhost\...` paths), then renders2sheet, then the Aseprite batch
   run (built from source; path in the script).

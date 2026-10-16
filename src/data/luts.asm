@@ -41,7 +41,7 @@ p=0
 p=p+1
   rend
 
-; Direction -> sprite frame, per animation (see tools/gen_art.py layout)
+; Direction -> sprite frame, per animation (layout: tools/renders2sheet.py)
 ;            N  NE  E  SE  S  SW  W  NW
 ftab_stand:  db 0,  1,  2,  3,  4, 27, 26, 25
 ftab_walk_a: db 5,  6,  7,  8,  9, 30, 29, 28

@@ -45,7 +45,7 @@ CUR_W           equ 4
 CUR_H           equ 8
 CUR_SIZE        equ CUR_W*CUR_H*2
 
-; Frame numbers inside a character sheet (see tools/gen_art.py)
+; Frame numbers inside a character sheet (see tools/renders2sheet.py)
 FR_STAND        equ 0
 FR_WALK_A       equ 5
 FR_WALK_B       equ 10

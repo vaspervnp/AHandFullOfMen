@@ -11,7 +11,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gen_art import TILE_NAMES  # noqa: E402
+from tiles_def import TILE_NAMES  # noqa: E402
 
 MAP_W, MAP_H = 40, 32
 

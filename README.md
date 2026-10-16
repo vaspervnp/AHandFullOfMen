@@ -85,8 +85,10 @@ src/audio/               AY-3-8912 access, sound effects
 src/missions/            mission spawn and patrol data
 src/menu.asm             title menu (banner + keyboard shortcuts)
 src/boot/loader.asm      disk loader (AMSDOS, pages sprites into bank 4)
-assets/                  PNG sheets (+ manifests), ASCII maps, DISC.BAS, splash
-tools/                   gen_art, png2cpc, map2asm, cpcsim, cpcemu, snapinfo, play
+assets/                  .blend + .aseprite sources, renders, PNG sheets (+ manifests),
+                         ASCII maps, DISC.BAS, splash
+tools/                   art pipeline (blender/, aseprite/, render_assets.sh, renders2sheet,
+                         assemble_art), png2cpc, map2asm, cpcsim, cpcemu, snapinfo, play
 tests/                   scripted-input scenarios + assertions
 ```
 
@@ -105,29 +107,32 @@ the 6128's extra RAM.
 
 ## Asset pipeline
 
-The characters and the radio tower are low-poly 3D models, pre-rendered
-the way the original *Commandos* did it. Run `tools/render_assets.sh`
-whenever the art changes. The PNGs it writes are committed, so
-`./build.sh` doesn't need Blender or Aseprite.
+All art lives in Blender scenes and Aseprite documents. Run
+`tools/render_assets.sh` after editing them (about 2 minutes). The PNG
+sheets it writes are committed, so `./build.sh` doesn't need either tool.
 
-1. **Blender** (`tools/blender/hfm_render.py`, run headless) builds the
-   Green Beret, Marine, Sniper, German sentry and radio tower from simple
-   shapes. It renders 7 poses × 5 directions with an orthographic camera
-   40° above the horizon, using Workbench flat shading with no
-   anti-aliasing, so every material comes out as an exact palette colour.
-   The 96×64 render size includes the Mode 0 2:1 squash.
-2. **`tools/renders2sheet.py`** turns each 8×4 block into its most common
-   colour, which gives 12×16 cells. It adds the black outline, mirrors the
-   west-facing frames, and lays out the game's sheet.
-3. **Aseprite** (`tools/aseprite/cpc_palette.lua`, batch or via the
-   Aseprite MCP) clamps to the 16-colour CPC palette and sets the 2:1 pixel
-   ratio. It saves an editable `assets/aseprite/*.aseprite` and exports the
-   sheet PNG.
-4. **`tools/png2cpc.py`** (run by the build) encodes Mode 0 bytes and masks.
+| Source | Contents |
+| --- | --- |
+| `assets/blender/*.blend` | operatives and sentry (posed by object name), radio tower, pine, rock, barrel, explosion frames, truck, HUD portrait busts, title banner |
+| `assets/aseprite/terrain.aseprite` | 8×8 terrain, building and HUD tiles; the prop cells hold the ground the Blender props are composited onto |
+| `assets/aseprite/font.aseprite` | 4×8 HUD font |
+| `assets/aseprite/cursor.aseprite` | crosshair, attack marker, `!`/`?` alerts, decoy icon |
 
-Tiles, the font, portraits, the title banner and effects are still drawn
-procedurally by `tools/gen_art.py`. The tower tiles come from its render.
-`tools/map2asm.py` converts `assets/maps/*.txt`.
+1. **Blender** renders each subject headless (`tools/blender/hfm_render.py`).
+   It opens the `.blend` if it exists; the first run builds the low-poly
+   scene from code and saves it. Characters get 7 poses × 5 directions;
+   props and banner are stills. Workbench flat shading with no
+   anti-aliasing gives exact palette colours, and the render size includes
+   the Mode 0 2:1 squash.
+2. **Aseprite** exports the hand-drawn documents.
+3. **`renders2sheet.py` / `assemble_art.py`** shrink each 8×4 render block
+   to one Mode 0 pixel (its most common colour). They add outlines, mirror
+   the west-facing frames, and composite the props onto the terrain tiles.
+4. **Aseprite** clamps every generated sheet to the 16-colour CPC palette
+   with 2:1 pixel ratio, saving an editable copy (`assets/aseprite/<sheet>.aseprite`)
+   next to the PNG it exports.
+5. **`tools/png2cpc.py`** (run by the build) encodes Mode 0 bytes and masks.
+   `tools/map2asm.py` converts `assets/maps/*.txt`.
 
 ## Tests
 

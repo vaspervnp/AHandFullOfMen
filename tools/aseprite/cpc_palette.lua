@@ -1,7 +1,7 @@
 -- Aseprite pass of the art pipeline.
 --
---   aseprite -b --script-param in=<sheet.png> --script-param ase=<out.aseprite>
---            --script-param png=<out.png> --script cpc_palette.lua
+--   aseprite -b --script-param in=<sheet.png|.aseprite> --script-param ase=<out.aseprite>
+--            --script-param png=<out.png> [--script-param grid=WxH] --script cpc_palette.lua
 --
 -- Clamps a sheet to the 16-colour CPC game palette (index 16 = transparent
 -- key), marks the document as 2:1 pixel ratio (Mode 0) for correct preview
@@ -44,6 +44,10 @@ spr:setPalette(pal)
 app.command.ChangePixelFormat{ format="indexed", dithering="none" }
 spr.transparentColor = KEY
 spr.pixelRatio = Size(2, 1)
+if p["grid"] then                -- optional editing grid, e.g. grid=8x8
+  local gw, gh = p["grid"]:match("(%d+)x(%d+)")
+  spr.gridBounds = Rectangle(0, 0, tonumber(gw), tonumber(gh))
+end
 
 spr:saveAs(p["ase"])
 spr:saveCopyAs(p["png"])
