@@ -293,6 +293,9 @@ pf_walk_clear:
   scf                           ; reached the goal
   ret
 .go:
+  ld a,(pf_gx)                  ; H <> 0 while X still has to move
+  sub b
+  ld h,a                        ; (ent_step: then Y goes 1 line a tick)
   bit 0,e                       ; x moves on even ticks
   jr nz,.y
   ld a,(pf_gx)
@@ -311,12 +314,18 @@ pf_walk_clear:
   inc c
   cp 1
   jr z,.check
+  inc h
+  dec h
+  jr nz,.check
   inc c
   jr .check
 .up:
   dec c
   cp &FF
   jr z,.check
+  inc h
+  dec h
+  jr nz,.check
   dec c
 .check:
   inc e

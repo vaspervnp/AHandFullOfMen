@@ -69,8 +69,12 @@ menu_keys:
   jr nz,.pick
   ld a,KEY_2
   call kbd_hit
-  ret z
   ld a,1
+  jr nz,.pick
+  ld a,KEY_3
+  call kbd_hit
+  ret z
+  ld a,2
 .pick:
   cp MISSION_COUNT
   ret nc

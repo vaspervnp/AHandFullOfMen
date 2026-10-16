@@ -65,8 +65,10 @@ ent_at:
   ret
 
 ; Step IX one movement tick toward (ent.tx, ent.ty).
-; Visual speed is equal on both axes: 1 X unit (2 Mode 0 pixels) is about
-; 4 scanlines, so X moves on even ticks only while Y moves 2 lines a tick.
+; X moves 1 unit on even ticks. Y moves 2 lines a tick when going straight
+; up or down, 1 line a tick while X is moving too: that keeps diagonals at
+; the tile grid's 45 degrees (a tile is 4 units by 8 lines), which is what
+; the pathfinder's corner rule assumes.
 ; C = movement-blocking tile flags.
 ; Returns NZ while still travelling, Z when arrived or blocked.
 ent_step:
@@ -85,6 +87,7 @@ ent_step:
   or e
   ret z                         ; arrived
   call face_signs
+  ld h,d                        ; sx before the odd-tick rule
   ld a,(tick)
   and 1
   jr z,.x_ok
@@ -93,6 +96,9 @@ ent_step:
   ld a,e
   or a
   jr z,.y_ok
+  ld a,h                        ; moving sideways too: 1 line a tick, so a
+  or a                          ; tile diagonal (4 units x 8 lines) stays a
+  jr nz,.y_ok                   ; straight line and can't clip a corner
   ld a,l
   cp 1
   jr z,.y_ok

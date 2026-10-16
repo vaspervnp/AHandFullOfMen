@@ -6,6 +6,7 @@
 TILE_RUBBLE     equ 32
 TILE_TOWER0     equ 24
 TILE_SNOW       equ 0
+TILE_WATER      equ 5
 TILE_SCORCH     equ 42
 
   align 256                     ; pathfinder indexes it by H=page, L=tile
@@ -59,3 +60,35 @@ tile_attrs:
   db TF_SOLID|TF_OPAQUE         ; 46 depot3
   db TF_SOLID|TF_OPAQUE         ; 47 depot4
   db TF_SOLID|TF_OPAQUE         ; 48 depot5
+  db TF_SOLID|TF_OPAQUE         ; 49 uboat0 (8x4, in the water)
+  db TF_SOLID|TF_OPAQUE         ; 50 uboat1
+  db TF_SOLID|TF_OPAQUE         ; 51 uboat2
+  db TF_SOLID|TF_OPAQUE         ; 52 uboat3
+  db TF_SOLID|TF_OPAQUE         ; 53 uboat4
+  db TF_SOLID|TF_OPAQUE         ; 54 uboat5
+  db TF_SOLID|TF_OPAQUE         ; 55 uboat6
+  db TF_SOLID|TF_OPAQUE         ; 56 uboat7
+  db TF_SOLID|TF_OPAQUE         ; 57 uboat8
+  db TF_SOLID|TF_OPAQUE         ; 58 uboat9
+  db TF_SOLID|TF_OPAQUE         ; 59 uboat10
+  db TF_SOLID|TF_OPAQUE         ; 60 uboat11
+  db TF_SOLID|TF_OPAQUE         ; 61 uboat12
+  db TF_SOLID|TF_OPAQUE         ; 62 uboat13
+  db TF_SOLID|TF_OPAQUE         ; 63 uboat14
+  db TF_SOLID|TF_OPAQUE         ; 64 uboat15
+  db TF_SOLID|TF_OPAQUE         ; 65 uboat16
+  db TF_SOLID|TF_OPAQUE         ; 66 uboat17
+  db TF_SOLID|TF_OPAQUE         ; 67 uboat18
+  db TF_SOLID|TF_OPAQUE         ; 68 uboat19
+  db TF_SOLID|TF_OPAQUE         ; 69 uboat20
+  db TF_SOLID|TF_OPAQUE         ; 70 uboat21
+  db TF_SOLID|TF_OPAQUE         ; 71 uboat22
+  db TF_SOLID|TF_OPAQUE         ; 72 uboat23
+  db TF_SOLID|TF_OPAQUE         ; 73 uboat24
+  db TF_SOLID|TF_OPAQUE         ; 74 uboat25
+  db TF_SOLID|TF_OPAQUE         ; 75 uboat26
+  db TF_SOLID|TF_OPAQUE         ; 76 uboat27
+  db TF_SOLID|TF_OPAQUE         ; 77 uboat28
+  db TF_SOLID|TF_OPAQUE         ; 78 uboat29
+  db TF_SOLID|TF_OPAQUE         ; 79 uboat30
+  db TF_SOLID|TF_OPAQUE         ; 80 uboat31

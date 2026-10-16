@@ -40,7 +40,7 @@ txt_failed:     db "MISSION FAILED  ",0
 
 ; row, ink, text
 menu_lines:
-  db 10, PEN_TEXT,   "KEYS 1 2: CHOOSE THE MISSION",0
+  db 10, PEN_TEXT,   "KEYS 1 2 3: CHOOSE THE MISSION",0
   db 13, PEN_RED,    "- KEYBOARD CONTROLS -",0
   db 15, PEN_TEXT,   "CURSOR KEYS / QAOP  MOVE CROSSHAIR ",0
   db 16, PEN_TEXT,   "SPACE / COPY / FIRE SELECT,GO,ATTACK",0

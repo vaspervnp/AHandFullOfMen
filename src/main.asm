@@ -548,6 +548,7 @@ data_start:
   include "data/texts.asm"
   include "missions/mission01.asm"
   include "missions/mission02.asm"
+  include "missions/mission03.asm"
 map_buf:        defs MAP_W*MAP_H
 path_table:     defs PATH_SLOTS*PATH_SLOT_SIZE
 path_dist:      defs PATH_W*PATH_H
@@ -618,6 +619,7 @@ bank7_start:
   include "bank7_gfx.asm"       ; generated: build/bank7_gfx.asm (title_gfx)
   include "mission01_map.asm"   ; generated: build/mission01_map.asm
   include "mission02_map.asm"   ; generated: build/mission02_map.asm
+  include "mission03_map.asm"   ; generated: build/mission03_map.asm
 bank7_end:
   assert bank7_end<=&8000
 

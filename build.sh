@@ -24,6 +24,7 @@ python3 tools/png2cpc.py assets/ui build/ui.asm
 python3 tools/png2cpc.py assets/ui build/bank7_gfx.asm manifest_bank7.json
 python3 tools/map2asm.py assets/maps/mission01.txt map_mission01 build/mission01_map.asm
 python3 tools/map2asm.py assets/maps/mission02.txt map_mission02 build/mission02_map.asm
+python3 tools/map2asm.py assets/maps/mission03.txt map_mission03 build/mission03_map.asm
 python3 tools/music2asm.py build/music.asm assets/music/title.txt assets/music/win.txt assets/music/lose.txt
 
 cd build

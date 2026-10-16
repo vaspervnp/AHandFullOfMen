@@ -69,6 +69,14 @@ so plant it, then run.
 | Inferno, Sapper | D: lays a bear trap at his feet (2 of them); a sentry walking onto it dies silently. G: plants the time bomb (1): 10 seconds, then a blast three tiles across that destroys the depot if it is close enough. He doesn't fight |
 | Spooky, Spy | D: puts on or takes off a German uniform; in it, sentries take him for one of their own. G: in uniform, talks to the sentry next to him, who turns to face him and stands there for as long as he stays close. Attack: syringe (silent, melee) |
 
+## Mission 3: Rough Waters
+
+A harbour with a U-boat moored at a wooden pier, fuel barrels stacked
+beside it. The dock yard is fenced, with one gate on the east road, but
+a canal runs down the west edge: the Marine's way in. Shoot the barrels
+next to the U-boat to sink her, then get the survivors to the truck south
+of the gate. Squad: Marine, Sniper, Spy (abilities as above).
+
 ## Stealth rules
 
 - Guards see in a 60° cone. In the close zone they spot anything,

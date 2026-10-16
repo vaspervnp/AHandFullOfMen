@@ -242,6 +242,35 @@ def check_t31_m2_route_out(r):
     assert ok, f"Green Beret at {pos}, never reached the truck (10,20)"
 
 
+def check_t32_m3_boot(r):
+    assert r.byte("cur_mission") == 2
+    assert [r.ent(i, "role") for i in range(3)] == [1, 2, ROLE_SPY], "wrong squad"
+    guards = sum(1 for i in range(16) if r.ent(i, "type") == 2)
+    assert guards == 6, f"{guards} sentries"
+    assert r.byte("alarm") == 0, "spotted at the start"
+
+
+def check_t33_m3_sink(r):
+    assert r.byte("target_down") == 1, "the U-boat is still afloat"
+    assert r.byte("map_buf", 6 * 40 + 20) == 5, "U-boat tiles not turned to water"
+    assert r.byte("alarm") == 1
+
+
+def check_t34_m3_route_swim(r):
+    ok, pos = near(r, 0, 70, 71)
+    assert ok, f"Marine at {pos}, never reached the U-boat (70,71)"
+
+
+def check_t35_m3_route_gate(r):
+    ok, pos = near(r, 1, 78, 111)
+    assert ok, f"Sniper at {pos}, never reached the pier (78,111)"
+
+
+def check_t36_m3_escape(r):
+    assert r.ent(0, "flags") & EF_BOARDED, "the Marine did not board the truck"
+    assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

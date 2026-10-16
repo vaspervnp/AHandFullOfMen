@@ -41,7 +41,7 @@ CHAR_RES = (96, 64)         # 12x16 Mode 0 sprite * (8, 4)
 TOWER_RES = (128, 128)      # 16x32 Mode 0 stamp * (8, 4)
 UNIT = 2.8 / 24             # Blender units per visual unit (character framing)
 SUBJECTS = ["beret", "marine", "sniper", "sapper", "spy", "guard", "tower", "pine", "rock",
-            "barrel", "trap", "bomb", "explosion", "truck", "depot", "portraits", "banner"]
+            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "portraits", "banner"]
 OPERATIVES = ("beret", "marine", "sniper", "sapper", "spy")      # portrait order = ROLE_*
 
 LOOKS = {
@@ -412,6 +412,24 @@ def build_depot(sc):                              # 3x2 tiles: 24x16 Mode 0 px
     frame_camera(sc, 24, 16)
 
 
+def build_uboat(sc):                              # 8x4 tiles: 64x32 Mode 0 px, bow east
+    cyl("hull", 0.55, 5.6, (0, 0, 0.3), "grey", verts=12, rot=(0, math.radians(90), 0))
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.55, depth=0.9,
+                                    location=(3.25, 0, 0.3), rotation=(0, math.radians(90), 0))
+    bpy.context.active_object.data.materials.append(mat("grey"))
+    box("deck", (4.6, 0.5, 0.12), (0, 0, 0.82), "black")
+    box("tower", (1.1, 0.5, 0.75), (-0.3, 0, 1.25), "grey")
+    box("bridge", (0.7, 0.55, 0.12), (-0.25, 0, 1.68), "black")
+    box("periscope", (0.06, 0.06, 0.6), (-0.1, 0, 2.0), "black")
+    box("gun", (0.6, 0.08, 0.08), (1.1, 0, 1.0), "black")
+    box("number", (0.5, 0.52, 0.2), (-0.3, 0, 1.15), "white")
+    for ob in sc.objects:                            # modelled at 4x2 tiles: x2
+        if ob.type == "MESH":
+            ob.location = ob.location * 2
+            ob.scale = ob.scale * 2
+    frame_camera(sc, 64, 32)
+
+
 def build_trap(sc):                               # bear trap, in a 12x16 sprite cell
     cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=10)
     for y in (-0.36, 0.36):                          # open jaws, teeth up
@@ -528,7 +546,8 @@ def build_banner(sc):
 def render_prop(subject, out_dir, blend_dir):
     builders = {"tower": build_tower, "pine": build_pine, "rock": build_rock,
                 "barrel": build_barrel, "truck": build_truck, "banner": build_banner,
-                "depot": build_depot, "trap": build_trap, "bomb": build_bomb}
+                "depot": build_depot, "trap": build_trap, "bomb": build_bomb,
+                "uboat": build_uboat}
     sc, _ = open_or_build(subject, blend_dir, builders[subject])
     render_still(sc, out_dir, subject, subject)
 
