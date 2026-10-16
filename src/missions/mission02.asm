@@ -6,6 +6,36 @@
 ; Map source: assets/maps/mission02.txt (col c -> x = c*4+2, row r -> y = r*8+7)
 ; ===========================================================================
 
+; descriptor first: mission_select copies it into mis
+m02_desc:
+  dw m02_spawns, map_mission02
+  db M02_CAM_X, M02_CAM_Y
+  db M02_DEPOT_COL, M02_DEPOT_ROW, 3, 2, M02_DEPOT_X, M02_DEPOT_Y
+  dw m02_ruin
+  db M02_TRUCK_X0, M02_TRUCK_X1, M02_TRUCK_Y0, M02_TRUCK_Y1
+  dw m02_txt_name, m02_txt_brief, m02_txt_hud1, m02_txt_hud2, m02_txt_obj
+  db M02_GUARDS
+  dw m02_briefing
+m02_ruin:                       ; burnt-out tanks
+  db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE
+  db TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH
+m02_txt_name:  db "MISSION 2: INFERNO",0
+m02_txt_brief: db "FJORD DEPOT - BLOW UP THE FUEL",0
+m02_txt_hud1:  db "BLOW UP FUEL DEPOT ",0
+m02_txt_hud2:  db "GET TO THE TRUCK!  ",0
+m02_txt_obj:   db "BLOW UP THE FUEL DEPOT    ",0
+m02_briefing:
+  db 11, PEN_RED,  "- OBJECTIVES -",0
+  db 12, PEN_TEXT, "PLANT THE TIME BOMB BY THE FUEL",0
+  db 13, PEN_TEXT, "TANKS INSIDE THE COMPOUND, RUN,",0
+  db 14, PEN_TEXT, "THEN TAKE THE TRUCK UP NORTH",0
+  db 16, PEN_RED,  "- SQUAD -",0
+  db 17, PEN_TEXT, "TINY     KNIFE  D DECOY  G DRAG   ",0
+  db 18, PEN_TEXT, "INFERNO  D BEAR TRAP  G TIME BOMB ",0
+  db 19, PEN_TEXT, "SPOOKY   SYRINGE  D UNIFORM G TALK",0
+  db 21, PEN_SNOW, "THE BOMB RAISES THE ALARM: 60 S",0
+  db &FF
+
 m02_spawns:
   db ET_COMMANDO, 10, 239, DIR_N : dw spr_beret : db RAM_SPRITES, 8 : dw ROLE_BERET
   db ET_COMMANDO, 18, 247, DIR_N : dw spr_sapper : db RAM_BANK6, 8 : dw ROLE_SAPPER

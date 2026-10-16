@@ -6,6 +6,35 @@
 ; Map source: assets/maps/mission03.txt (col c -> x = c*4+2, row r -> y = r*8+7)
 ; ===========================================================================
 
+; descriptor first: mission_select copies it into mis
+m03_desc:
+  dw m03_spawns, map_mission03
+  db M03_CAM_X, M03_CAM_Y
+  db M03_UBOAT_COL, M03_UBOAT_ROW, 16, 6, M03_UBOAT_X, M03_UBOAT_Y
+  dw m03_ruin
+  db M03_TRUCK_X0, M03_TRUCK_X1, M03_TRUCK_Y0, M03_TRUCK_Y1
+  dw m03_txt_name, m03_txt_brief, m03_txt_hud1, m03_txt_hud2, m03_txt_obj
+  db M03_GUARDS
+  dw m03_briefing
+m03_ruin:                       ; she sinks
+  ds 16*6,TILE_WATER
+m03_txt_name:  db "MISSION 3: ROUGH WATERS",0
+m03_txt_brief: db "HARBOUR - SINK THE U-BOAT",0
+m03_txt_hud1:  db "SINK THE U-BOAT    ",0
+m03_txt_hud2:  db "GET TO THE TRUCK!  ",0
+m03_txt_obj:   db "SINK THE U-BOAT           ",0
+m03_briefing:
+  db 11, PEN_RED,  "- OBJECTIVES -",0
+  db 12, PEN_TEXT, "SINK THE U-BOAT AT THE PIER: SHOOT",0
+  db 13, PEN_TEXT, "THE FUEL BARRELS STACKED BESIDE IT",0
+  db 14, PEN_TEXT, "THEN RUN FOR THE TRUCK BY THE ROAD",0
+  db 16, PEN_RED,  "- SQUAD -",0
+  db 17, PEN_TEXT, "FINS    HARPOON  SWIMS THE CANAL  ",0
+  db 18, PEN_TEXT, "DUKE    RIFLE: 5 SHOTS, LOUD      ",0
+  db 19, PEN_TEXT, "SPOOKY  SYRINGE  D UNIFORM G TALK ",0
+  db 21, PEN_SNOW, "THE BLAST RAISES THE ALARM: 60 S",0
+  db &FF
+
 m03_spawns:
   db ET_COMMANDO, 14, 247, DIR_N : dw spr_marine : db &C5, 8 : dw ROLE_MARINE
   db ET_COMMANDO, 22, 247, DIR_N : dw spr_sniper : db &C5, 8 : dw ROLE_SNIPER

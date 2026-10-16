@@ -13,7 +13,8 @@ mission_begin:
   ld c,a
   jp mission_load
 
-; Copy the descriptor of (cur_mission) into mis (menu texts need it too).
+; Copy the block of (cur_mission) out of bank 7 into mis_buf, and its
+; descriptor into mis (menu texts need it too).
 mission_select:
   ld a,(cur_mission)
   add a,a
@@ -25,6 +26,28 @@ mission_select:
   inc hl
   ld h,(hl)
   ld l,a
+  ld de,mis_buf                 ; bank 7 -> mis_buf, through bounce
+  ld a,MIS_BUF_SIZE/MAP_W
+.chunk:
+  push af
+  ld bc,&7F00+RAM_BANK7
+  out (c),c
+  push de
+  ld de,bounce
+  ld bc,MAP_W
+  ldir
+  pop de
+  ld bc,&7F00+RAM_BASE64
+  out (c),c
+  push hl
+  ld hl,bounce
+  ld bc,MAP_W
+  ldir
+  pop hl
+  pop af
+  dec a
+  jr nz,.chunk
+  ld hl,mis_buf                 ; the descriptor heads the block
   ld de,mis
   ld bc,MIS_SIZE
   ldir

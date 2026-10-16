@@ -64,12 +64,15 @@
   `tools/psg2wav.py build/handful_of_men.sna out.wav --notes`.
 
 ## Missions and memory
-- Missions: `src/missions/missions.asm` descriptors (MIS_* in defs.asm) ->
-  `mis` at mission start. Maps live in bank 7 and are copied into `map_buf`
-  through `bounce`. Commandos have `ent.role` (ROLE_*), set from their spawn
+- Missions: each `src/missions/missionNN.asm` is one block (descriptor
+  first, MIS_* in defs.asm, then texts, briefing, spawns, routes) stored in
+  bank 7 but assembled for `mis_buf` (`org mis_buf,mis_phys_N` in main.asm,
+  max `MIS_BUF_SIZE`). `mission_select` copies the block into `mis_buf` and
+  the descriptor into `mis`. Maps also live in bank 7 and are copied into
+  `map_buf`; both copies go through `bounce`. Commandos have `ent.role` (ROLE_*), set from their spawn
   record's route word. Never key behaviour off the entity index.
 - Banks: 4 = beret/guard/cursor/fx, 5 = marine/sniper/music, 6 = sapper/spy,
-  7 = title banner + maps. The &4000 data area is hidden while any of them is
+  7 = title banner + maps + mission blocks. The &4000 data area is hidden while any of them is
   paged in, so data read during `draw_items` (e.g. `scr_line`) must stay in
   the code area.
 - Code area limit: `code_end <= &3F00` (test builds are ~&100 bigger). Constant

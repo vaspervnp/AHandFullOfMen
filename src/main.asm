@@ -546,10 +546,7 @@ data_start:
   include "ui.asm"              ; generated: build/ui.asm
   include "missions/missions.asm"
   include "data/texts.asm"
-  include "missions/mission01.asm"
-  include "missions/mission02.asm"
-  include "missions/mission03.asm"
-  include "missions/mission04.asm"
+mis_buf:        defs MIS_BUF_SIZE  ; the current mission's block (from bank 7)
 map_buf:        defs MAP_W*MAP_H
 path_table:     defs PATH_SLOTS*PATH_SLOT_SIZE
 path_dist:      defs PATH_W*PATH_H
@@ -610,7 +607,7 @@ sprites3_end:
   endif
 
 ; ---------------------------------------------------------------------------
-; RAM bank 7 (paged at &4000 when needed): title art, mission map sources
+; RAM bank 7 (paged at &4000 when needed): title art, mission maps and data
 ; ---------------------------------------------------------------------------
   bank 7
   org &4000
@@ -620,6 +617,31 @@ bank7_start:
   include "mission02_map.asm"   ; generated: build/mission02_map.asm
   include "mission03_map.asm"   ; generated: build/mission03_map.asm
   include "mission04_map.asm"   ; generated: build/mission04_map.asm
+mis_phys_1:                    ; mission 1, assembled for mis_buf
+  org mis_buf,mis_phys_1
+  include "missions/mission01.asm"
+mis_end_1:
+  assert mis_end_1-mis_buf<=MIS_BUF_SIZE
+  org mis_phys_1+mis_end_1-mis_buf
+mis_phys_2:                    ; mission 2, assembled for mis_buf
+  org mis_buf,mis_phys_2
+  include "missions/mission02.asm"
+mis_end_2:
+  assert mis_end_2-mis_buf<=MIS_BUF_SIZE
+  org mis_phys_2+mis_end_2-mis_buf
+mis_phys_3:                    ; mission 3, assembled for mis_buf
+  org mis_buf,mis_phys_3
+  include "missions/mission03.asm"
+mis_end_3:
+  assert mis_end_3-mis_buf<=MIS_BUF_SIZE
+  org mis_phys_3+mis_end_3-mis_buf
+mis_phys_4:                    ; mission 4, assembled for mis_buf
+  org mis_buf,mis_phys_4
+  include "missions/mission04.asm"
+mis_end_4:
+  assert mis_end_4-mis_buf<=MIS_BUF_SIZE
+  org mis_phys_4+mis_end_4-mis_buf
+  ds MIS_BUF_SIZE-(mis_end_4-mis_buf)  ; the last copy reads a whole buffer
 bank7_end:
   assert bank7_end<=&8000
 

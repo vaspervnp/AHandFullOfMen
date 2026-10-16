@@ -6,6 +6,35 @@
 ; Map source: assets/maps/mission04.txt (col c -> x = c*4+2, row r -> y = r*8+7)
 ; ===========================================================================
 
+; descriptor first: mission_select copies it into mis
+m04_desc:
+  dw m04_spawns, map_mission04
+  db M04_CAM_X, M04_CAM_Y
+  db M04_BRIDGE_COL, M04_BRIDGE_ROW, 4, 3, M04_BRIDGE_X, M04_BRIDGE_Y
+  dw m04_ruin
+  db M04_TRUCK_X0, M04_TRUCK_X1, M04_TRUCK_Y0, M04_TRUCK_Y1
+  dw m04_txt_name, m04_txt_brief, m04_txt_hud1, m04_txt_hud2, m04_txt_obj
+  db M04_GUARDS
+  dw m04_briefing
+m04_ruin:                       ; the span falls into the river
+  ds 4*3,TILE_WATER
+m04_txt_name:  db "MISSION 4: A BRIDGE TOO FAR",0
+m04_txt_brief: db "RIVER LINE - BLOW THE RAIL BRIDGE",0
+m04_txt_hud1:  db "BLOW UP THE BRIDGE ",0
+m04_txt_hud2:  db "GET TO THE TRUCK!  ",0
+m04_txt_obj:   db "BLOW UP THE RAIL BRIDGE   ",0
+m04_briefing:
+  db 11, PEN_RED,  "- OBJECTIVES -",0
+  db 12, PEN_TEXT, "PLANT THE TIME BOMB AT THE RAILWAY",0
+  db 13, PEN_TEXT, "BRIDGE, THEN CROSS THE RIVER AND",0
+  db 14, PEN_TEXT, "TAKE THE TRUCK IN THE NORTH-EAST",0
+  db 16, PEN_RED,  "- SQUAD -",0
+  db 17, PEN_TEXT, "TINY     KNIFE  D DECOY  G DRAG   ",0
+  db 18, PEN_TEXT, "INFERNO  D BEAR TRAP  G TIME BOMB ",0
+  db 19, PEN_TEXT, "DUKE     RIFLE: 5 SHOTS, LOUD     ",0
+  db 21, PEN_SNOW, "THE ICE IN THE WEST WILL HOLD YOU",0
+  db &FF
+
 m04_spawns:
   db ET_COMMANDO, 10, 247, DIR_N : dw spr_beret : db RAM_SPRITES, 8 : dw ROLE_BERET
   db ET_COMMANDO, 18, 247, DIR_N : dw spr_sapper : db RAM_BANK6, 8 : dw ROLE_SAPPER

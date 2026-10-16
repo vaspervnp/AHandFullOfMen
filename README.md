@@ -149,7 +149,7 @@ src/entities/            entity helpers, commandos, guards, barrels/explosions/d
                          role abilities (Sapper, Spy)
 src/ai/                  vision geometry + LOS, guard state machine, noise, pathfinding
 src/audio/               AY-3-8912 access, sound effects
-src/missions/            mission table + per-mission spawn and patrol data
+src/missions/            mission table + one block per mission (descriptor, texts, spawns, patrols)
 src/menu.asm             title menu (banner + keyboard shortcuts)
 src/boot/loader.asm      disk loader (AMSDOS, pages sprites into bank 4)
 assets/                  .blend + .aseprite sources, renders, PNG sheets (+ manifests),
@@ -165,7 +165,7 @@ tests/                   scripted-input scenarios + assertions
 | --- | --- |
 | `&0040-&3EFF` | code, tables, variables |
 | `&3F00-&3FFF` | stack (measured depth is about 30 bytes; tests check a canary) |
-| `&4000-&7FFF` | tiles, font, portraits, texts, mission spawn lists, live map, path grids, render caches. Paged over by bank 4 (Green Beret, guard, cursor, effects), 5 (Marine, Sniper, menu music) or 6 (Sapper, Spy) while blitting, and by bank 7 (title banner, mission maps) when the menu or a mission loads |
+| `&4000-&7FFF` | tiles, font, portraits, texts, the current mission's block, live map, path grids, render caches. Paged over by bank 4 (Green Beret, guard, cursor, effects), 5 (Marine, Sniper, menu music) or 6 (Sapper, Spy) while blitting, and by bank 7 (title banner, mission maps and blocks) when the menu or a mission loads |
 | `&8000-&BFFF` | screen buffer B |
 | `&C000-&FFFF` | screen buffer A |
 
