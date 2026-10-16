@@ -17,7 +17,8 @@ tools/release.sh      # build + all tests + fuzz soak -> dist/*.dsk, *.sna, SHA2
 ```
 
 On a real CPC or in an emulator: insert `build/handful_of_men.dsk` and type
-`RUN"DISC`.
+`RUN"DISC`. The game needs 128K: a CPC 6128, or a 464/664 with a 64K
+expansion. On a 64K machine the loader says so and returns to BASIC.
 
 ## Controls
 

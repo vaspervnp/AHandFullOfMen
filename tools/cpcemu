@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Headless CPC test harness built on the Caprice32 snap.
 #
-#   tools/cpcemu [-shot out.png] [-timeout secs] [-keys "autotype"] [-nowait] <file.sna|file.dsk>
+#   tools/cpcemu [-shot out.png] [-timeout secs] [-keys "autotype"] [-nowait] [-model 0|1|2] <file.sna|file.dsk>
+#
+# -model: 0 = CPC 464, 1 = 664, 2 = 6128 (default). -ram: KB (default 128).
 #
 # -nowait: don't wait for the &0000 breakpoint; screenshot right after the
 #          autotyped keys (pad them with harmless keys to let time pass).
@@ -16,6 +18,8 @@ SNAPOUT=""
 WAIT='\(CAP32_WAITBREAK)'
 TIMEOUT=60
 KEYS=""
+MODEL=2
+RAM=128
 while [[ $# -gt 1 ]]; do
   case "$1" in
     -shot) SHOT="$2"; shift 2 ;;
@@ -23,6 +27,8 @@ while [[ $# -gt 1 ]]; do
     -nowait) WAIT=""; shift ;;
     -timeout) TIMEOUT="$2"; shift 2 ;;
     -keys) KEYS="$2"; shift 2 ;;
+    -model) MODEL="$2"; shift 2 ;;
+    -ram) RAM="$2"; shift 2 ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
@@ -42,7 +48,7 @@ CMDFILE="$SNAP_DATA/autocmd.sh"
 cat > "$CMDFILE" <<INNER
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 exec "\$SNAP/usr/bin/cap32" --cfg_file="\$SNAP_USER_DATA/etc/cap32.cfg" \\
-  -O system.limit_speed=0 -O system.model=2 -O video.scr_fps=0 \\
+  -O system.limit_speed=0 -O system.model=${MODEL} -O system.ram_size=${RAM} -O video.scr_fps=0 \\
   -a '${KEYS}${WAIT}\\(CAP32_SCRNSHOT)${DUMP}\\(CAP32_EXIT)' "$IMAGE"
 INNER
 

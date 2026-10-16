@@ -35,6 +35,8 @@
   (see `tools/cpcemu`). `CAP32_WAITBREAK` waits for PC = &0000. The snap
   can't read `/tmp`, so keep images under the repo. `CAP32_SNAPSHOT` isn't
   recognised by 4.6.
+- `tools/cpcemu -model 1 -ram 64` emulates a 64K CPC 664. Caprice32's RAM
+  size is a separate setting and defaults to 128K on every model.
 - `/usr/share/cpcemu` is Marco Vieth's CPCEMU 2.5: interactive only, with no
   headless or dump options.
 - `tools/cpcsim.py` counts raw Z80 T-states (no CPC 4T rounding). Pass

@@ -50,5 +50,17 @@ raise SystemExit(0 if b > 200 and r < 60 and g < 60 else 1)"; then
   else
     echo "FAIL dsk_play"; fail=1
   fi
+  # ... and on a 64K CPC 664 the loader explains it needs 128K instead
+  if tools/cpcemu -model 1 -ram 64 -timeout 300 -nowait -keys "run\"disc"$'\n'"$PAD$PAD" \
+       -shot "$PWD/build/tests/dsk_64k.png" build/handful_of_men.dsk >/dev/null \
+     && python3 -c "
+from PIL import Image
+im = Image.open('build/tests/dsk_64k.png').convert('RGB')
+lit = sum(1 for x in range(64, 700) if im.getpixel((x, 92)) != (0, 0, 0))
+raise SystemExit(0 if lit > 100 else 1)        # the first line of the message"; then
+    echo "ok   dsk_64k (see build/tests/dsk_64k.png)"
+  else
+    echo "FAIL dsk_64k"; fail=1
+  fi
 fi
 exit $fail

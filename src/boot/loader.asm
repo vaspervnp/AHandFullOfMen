@@ -12,6 +12,8 @@
 ; then stop the drive motor, take over the machine and jump to the game.
 ; ===========================================================================
 
+TXT_OUTPUT      equ &BB5A
+SCR_SET_MODE    equ &BC0E
 CAS_IN_OPEN     equ &BC77
 CAS_IN_CLOSE    equ &BC7A
 CAS_IN_DIRECT   equ &BC83
@@ -19,6 +21,34 @@ DISK_BUFFER     equ &8800       ; 2K AMSDOS buffer, below the loader
 
   org &9000
 loader:
+  ; 128K only: on a 464/664 the &7FC4 page switch does nothing, so a byte
+  ; written to "bank 4" lands in base RAM. Say so and go back to BASIC.
+  ld bc,&7FC4
+  out (c),c
+  ld a,&55
+  ld (&4000),a
+  ld bc,&7FC0
+  out (c),c
+  ld a,&AA
+  ld (&4000),a
+  ld bc,&7FC4
+  out (c),c
+  ld a,(&4000)
+  ld bc,&7FC0
+  out (c),c
+  cp &55
+  jr z,.load
+  ld a,1
+  call SCR_SET_MODE
+  ld hl,msg_need_128k
+.msg:
+  ld a,(hl)
+  or a
+  ret z
+  call TXT_OUTPUT
+  inc hl
+  jr .msg
+.load:
   ld hl,fn_code
   ld de,&0040
   call load_file
@@ -71,6 +101,11 @@ load_file:
   out (c),a
   di
   halt
+
+msg_need_128k:
+  db "A HANDFUL OF MEN needs 128K of RAM:",13,10
+  db "a CPC 6128, or a 464/664 with a",13,10
+  db "64K memory expansion.",13,10,0
 
 fn_code:    db "CODE    .BIN"
 fn_sprites: db "SPRITES .BIN"
