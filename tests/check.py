@@ -84,6 +84,7 @@ def check_t06_menu(r):
 
 
 def check_t07_menu_screen(r):
+    assert r.byte("mus_on") == 1, "no title music"
     assert r.cpc.crtc[12] == 0x30, "menu should be on the &C000 screen"
     # banner present: a line through the logo is not plain background
     line = r.cpc.base_ram(0xC000 + (20 % 8) * 0x800 + (20 // 8) * 80, 80)
@@ -138,6 +139,10 @@ def check_t15_reinforced(r):
 def check_t16_debrief(r):
     assert r.cpc.crtc[12] == 0x30, "debrief should be on the &C000 screen"
     assert r.byte("game_over") == 2
+    assert r.byte("mus_on") == 1, "no music on the debrief"
+    ptr = r.byte("mus_voices") | r.byte("mus_voices", 1) << 8
+    lo, hi = r.syms["song_win_a"], r.syms["song_win_b"]
+    assert lo <= ptr <= hi, f"voice A at {ptr:04X}, not in the victory fanfare {lo:04X}-{hi:04X}"
 
 
 def near(r, i, x, y, tol_x=2, tol_y=4):

@@ -1,0 +1,6 @@
+# Mission accomplished: fanfare in C, plays once.
+song win
+tempo 3
+vol 14 11
+A: g4 . c5 . e5 . g5 . | . . e5 . g5 . . . | c6 . . . . . . . | . . . . - . . .
+B: c3 . . . g2 . . . | c3 . . . g2 . . . | c3 . g3 . c4 . . . | . . . . - . . .

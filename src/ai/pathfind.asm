@@ -26,7 +26,8 @@ PATH_H          equ MAP_H+2
 PATH_SLOTS      equ 8
 PATH_SLOT_SIZE  equ 32
 PATH_MAX_WP     equ 12
-PATH_QUEUE_LEN  equ 512         ; entries (16-bit cell pointers)
+PATH_QUEUE_LEN  equ 256         ; entries (16-bit cell pointers): ring; the
+                                ; flood's frontier on a 40x32 map peaks ~150
 P_BLOCKED       equ &FE
 P_OPEN          equ &FF
 P_MAX_DIST      equ &FC

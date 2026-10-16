@@ -11,6 +11,8 @@ menu_run:
   call page_begin
   ld hl,menu_lines
   call page_lines
+  ld hl,song_title
+  call music_start
   ld hl,txt_menu_start
   ld c,MENU_PROMPT_ROW
   jp page_wait_fire
@@ -127,6 +129,13 @@ debrief_run:
   call print_center
   ld hl,debrief_lines
   call page_lines
+  ld a,(game_over)
+  cp 2
+  ld hl,song_win
+  jr z,.song
+  ld hl,song_lose
+.song:
+  call music_start
   ld hl,txt_continue
   ld c,DEBRIEF_PROMPT_ROW
   jp page_wait_fire
@@ -205,6 +214,7 @@ page_wait_fire:
   ld (menu_blink),a
 .loop:
   call wait_frame
+  call music_update
   call kbd_scan
   call joy_read
   if TEST
@@ -228,7 +238,7 @@ page_wait_fire:
   call print_center
 .input:
   call joy_fire_hit
-  ret nz
+  jp nz,music_stop
   jr .loop
 
 ; ---------------------------------------------------------------------------

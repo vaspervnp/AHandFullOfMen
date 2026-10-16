@@ -55,6 +55,12 @@
   (black). The Lua pass converts through an opaque magenta key at index 16
   instead.
 
+## Music
+- `assets/music/*.txt` -> `tools/music2asm.py` -> `build/music.asm`
+  (bank 5). Player in `src/audio/music.asm`, stepped by `page_wait_fire`.
+- Check by ear without an emulator:
+  `tools/psg2wav.py build/handful_of_men.sna out.wav --notes`.
+
 ## Game code rules
 - Any change to `map_buf` must call `map_rect_changed` (a few tiles: walk
   grids, dirty tiles, cone recast) or `path_map_changed` plus a full

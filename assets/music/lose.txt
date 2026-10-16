@@ -1,0 +1,6 @@
+# Mission failed: falling line in A minor, plays once.
+song lose
+tempo 4
+vol 13 11
+A: e5 . . . d5 . . . | c5 . . . b4 . . . | a4 . . . g#4 . . . | a4 . . . . . - .
+B: a2 . . . f2 . . . | e2 . . . e2 . . . | f2 . . . e2 . . . | a2 . . . . . - .

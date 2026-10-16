@@ -76,6 +76,7 @@ class CPC:
         self.trace = None           # deque of recent PCs when tracing
         self.samples = None         # PC samples (one per chunk) when profiling
         self.slow = 1.0             # T-state multiplier (CPC wait states)
+        self.psg_log = None         # list of AY register snapshots, one per frame
         m.set_output_callback(self.out)
         m.set_input_callback(self.inp)
         m.set_breakpoint(0)
@@ -180,6 +181,8 @@ class CPC:
                     self.stopped = True
                     break
         self.frame += 1
+        if self.psg_log is not None:
+            self.psg_log.append(list(self.psg[:14]))
 
     def screen_png(self, path):
         from PIL import Image

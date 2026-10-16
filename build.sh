@@ -21,6 +21,7 @@ python3 tools/png2cpc.py assets/sprites2 build/sprites2.asm
 python3 tools/png2cpc.py assets/tiles build/tiles.asm
 python3 tools/png2cpc.py assets/ui build/ui.asm
 python3 tools/map2asm.py assets/maps/mission01.txt map_mission01 build/mission01_map.asm
+python3 tools/music2asm.py build/music.asm assets/music/title.txt assets/music/win.txt assets/music/lose.txt
 
 cd build
 

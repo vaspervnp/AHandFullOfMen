@@ -322,7 +322,7 @@ fuzz_rand:
 fuzz_keys:
   db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_V,KEY_RETURN
   db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_V,KEY_ESC
-fuzz_state: dw FUZZ_SEED or 1
+fuzz_state: dw FUZZ_SEED*2+1           ; odd, distinct per seed
 fuzz_count: dw FUZZ_TICKS
 fuzz_hold:  db 1
 fuzz_joy:   db 0
@@ -362,6 +362,7 @@ test_setup:
   include "ai/pathfind.asm"
   include "audio/psg.asm"
   include "audio/sfx.asm"
+  include "audio/music.asm"
   include "game.asm"
   include "menu.asm"
   include "data/luts.asm"
@@ -415,6 +416,8 @@ look_idx:       db 0
 look_r:         db 0
 siren_phase:    db 0
 sfx_ptr:        dw 0
+mus_on:         db 0
+mus_voices:     defs 2*MUS_VOICE
 vis_vx:         db 0
 vis_vy:         db 0
 vis_ax:         db 0
@@ -466,7 +469,6 @@ cone_cy:        db 0
 cone_wr:        dw 0
 cone_dx:        dw 0
 cone_dy:        dw 0
-cone_buf:       defs CONE_RAYS*CONE_STEPS*CONE_DOT
 noise_x:        db 0
 noise_y:        db 0
 noise_r:        db 0
@@ -533,6 +535,7 @@ pf_cache_land:  defs PATH_W*PATH_H
 pf_cache_swim:  defs PATH_W*PATH_H
   align 256                     ; pf_wrap detects the end by its page
 path_queue:     defs PATH_QUEUE_LEN*2
+cone_buf:       defs CONE_RAYS*CONE_STEPS*CONE_DOT  ; never used while a sprite bank is paged in
 cache_c0:       defs NSLOTS*IT_SIZE     ; draw items shown in each buffer
 cache_80:       defs NSLOTS*IT_SIZE
 data_end:
@@ -564,6 +567,7 @@ sprites_end:
   org &4000
 sprites2_start:
   include "sprites2.asm"        ; generated: build/sprites2.asm
+  include "music.asm"           ; generated: build/music.asm (menu songs)
 sprites2_end:
   assert sprites2_end<=&8000
 

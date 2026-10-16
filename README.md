@@ -163,6 +163,17 @@ sheets it writes are committed, so `./build.sh` doesn't need either tool.
 5. **`tools/png2cpc.py`** (run by the build) encodes Mode 0 bytes and masks.
    `tools/map2asm.py` converts `assets/maps/*.txt`.
 
+### Music
+
+The title screen plays a march, and the debrief a fanfare or a lament.
+They're written as plain text in `assets/music/*.txt`: two voices of
+note / hold / rest tokens, with a tempo and start volumes. The build turns
+them into AY data with `tools/music2asm.py`; it lives in RAM bank 5, after
+the Marine and Sniper sheets. The player (`src/audio/music.asm`) runs only
+on those pages, so in-game sound is effects and the siren as before.
+`tools/psg2wav.py build/handful_of_men.sna title.wav --notes` renders what
+the AY plays to a WAV file and lists the notes.
+
 ## Tests
 
 `tests/run_tests.sh` assembles each `tests/tNN_*.asm` scenario. A scenario
