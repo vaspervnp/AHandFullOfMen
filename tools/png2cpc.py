@@ -22,8 +22,9 @@ kinds:
 Cells are sliced left-to-right, top-to-bottom. Each cell gets a label
 <label>_<n>, plus <label>_count and <label>_size equates.
 
-Source PNGs are RGB; every pixel must be an exact in-game palette colour
-(see cpcpal.GAME_RGB) or the magenta transparency key #FF00FF.
+Every opaque pixel must be an exact in-game palette colour (see
+cpcpal.GAME_RGB); transparent pixels (alpha) or the magenta key #FF00FF
+are transparent. Indexed PNGs exported by Aseprite work as they are.
 """
 import json
 import os
@@ -38,8 +39,9 @@ RGB_TO_PEN = {rgb: i for i, rgb in enumerate(GAME_RGB)}
 
 
 def pen_at(img, x, y, path):
-    rgb = img.getpixel((x, y))[:3]
-    if rgb == TRANSPARENT:
+    r, g, b, a = img.getpixel((x, y))
+    rgb = (r, g, b)
+    if a < 128 or rgb == TRANSPARENT:
         return None
     try:
         return RGB_TO_PEN[rgb]
@@ -72,7 +74,7 @@ def encode_cell(img, ox, oy, w, h, kind, path):
 
 def convert_sheet(src_dir, sheet):
     path = os.path.join(src_dir, sheet["file"])
-    img = Image.open(path).convert("RGB")
+    img = Image.open(path).convert("RGBA")
     w, h = sheet["cell"]
     kind = sheet.get("kind", "plain")
     if kind != "font" and w % 2:

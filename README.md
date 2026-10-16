@@ -67,36 +67,29 @@ the 6128's extra RAM.
 
 ## Asset pipeline
 
-`tools/gen_art.py` currently draws placeholder sprites, tiles, font and
-portraits procedurally. Blender/Aseprite renders replace them by keeping
-the same sheet layout and palette. `tools/png2cpc.py` converts sheets to
-Mode 0 data (masked sprites as mask/pixel byte pairs). `tools/map2asm.py`
-converts `assets/maps/*.txt`.
+The characters and the radio tower are low-poly 3D models, pre-rendered
+the way the original *Commandos* did it. Run `tools/render_assets.sh`
+whenever the art changes. The PNGs it writes are committed, so
+`./build.sh` doesn't need Blender or Aseprite.
 
-## Mission 1: Baptism of Fire
+1. **Blender** (`tools/blender/hfm_render.py`, run headless) builds the
+   Green Beret, Marine, Sniper, German sentry and radio tower from simple
+   shapes. It renders 7 poses × 5 directions with an orthographic camera
+   40° above the horizon, using Workbench flat shading with no
+   anti-aliasing, so every material comes out as an exact palette colour.
+   The 96×64 render size includes the Mode 0 2:1 squash.
+2. **`tools/renders2sheet.py`** turns each 8×4 block into its most common
+   colour, which gives 12×16 cells. It adds the black outline, mirrors the
+   west-facing frames, and lays out the game's sheet.
+3. **Aseprite** (`tools/aseprite/cpc_palette.lua`, batch or via the
+   Aseprite MCP) clamps to the 16-colour CPC palette and sets the 2:1 pixel
+   ratio. It saves an editable `assets/aseprite/*.aseprite` and exports the
+   sheet PNG.
+4. **`tools/png2cpc.py`** (run by the build) encodes Mode 0 bytes and masks.
 
-Destroy the radio tower inside the compound, then get every surviving
-commando into the truck at the road junction. Only a bullet sets off a
-barrel, and the blast must be close to the tower's base. Explosions raise
-the base alarm, and you then have 60 seconds before reinforcements arrive.
-Finishing without ever raising the alarm counts as a bonus objective.
-
-| Commando | Abilities |
-| --- | --- |
-| Tiny, Green Beret | knife (silent, melee), radio decoy, drags barrels and bodies |
-| Fins, Marine | swims, and can't be seen underwater; harpoon (silent, short range) |
-| Duke, Sniper | rifle: long range, needs a clear line of sight, 5 rounds, loud |
-
-## Stealth rules
-
-- Guards see in a 60° cone. In the close zone they spot anything,
-  including crawling commandos and bodies. In the far zone they only spot
-  commandos standing up. Trees, rocks and buildings block their view.
-- A spotted commando gets 1.5 s of grace (`!`). After that the guard opens
-  fire, the siren sounds, and every guard joins the fight.
-- Walking upright on snow is audible nearby. Guards come to investigate
-  (`?`) for about 10 s, then go back to their patrol. The decoy draws guards
-  from further away and holds them for about 25 s.
+Tiles, the font, portraits, the title banner and effects are still drawn
+procedurally by `tools/gen_art.py`. The tower tiles come from its render.
+`tools/map2asm.py` converts `assets/maps/*.txt`.
 
 ## Tests
 

@@ -31,6 +31,16 @@
 - `tools/cpcsim.py` counts raw Z80 T-states (no CPC 4T rounding), so it's
   optimistic on timing.
 
+## Art pipeline
+- `tools/render_assets.sh`: Blender 5.2 (Windows, through WSL interop, with
+  `\\wsl.localhost\...` paths), then renders2sheet, then the Aseprite batch
+  run (built from source; path in the script).
+- The Blender MCP calls time out unless Blender is open with the add-on.
+  The headless CLI does the same job reproducibly.
+- In Aseprite's indexed conversion, transparent pixels land on index 0
+  (black). The Lua pass converts through an opaque magenta key at index 16
+  instead.
+
 ## Hardware notes
 - Mode 0 byte layout: the left pixel's bits 0..3 sit in bits 7,3,5,1. The
   table in brief §4.3 is wrong.

@@ -533,6 +533,18 @@ def make_tiles():
     big.rect(7, 0, 8, 1, BRED)
     big.set(7, 0, BYEL)
     big.rect(3, 30, 12, 31, GREY)
+    tower_render = os.path.join(ASSETS, "renders", "tower", "tower.png")
+    if os.path.exists(tower_render):             # Blender pre-render wins
+        from pixelize import pixelize
+        rows = pixelize(tower_render, priority=(BYEL, BRED))
+        random.seed(11)
+        big = Canvas(16, 32, WHT)
+        for y in range(32):
+            for x in range(16):
+                if random.random() < 0.04:
+                    big.set(x, y, SNOWSH)
+                if rows[y][x] is not None:
+                    big.set(x, y, rows[y][x])
     for i in range(8):
         tx, ty = i % 2, i // 2
         cv = Canvas(8, 8)
@@ -744,12 +756,17 @@ def write_manifest(folder, sheets):
 
 
 def main():
-    save_sheet(sprite_sheet(BERET), os.path.join(ASSETS, "sprites", "beret.png"))
-    save_sheet(sprite_sheet(GUARD), os.path.join(ASSETS, "sprites", "guard.png"))
+    # character sheets: placeholders only where there is no Blender pre-render
+    # (tools/render_assets.sh builds those through Blender + Aseprite)
+    def char_sheet(look, folder, name):
+        if not os.path.isdir(os.path.join(ASSETS, "renders", name)):
+            save_sheet(sprite_sheet(look), os.path.join(ASSETS, folder, name + ".png"))
+    char_sheet(BERET, "sprites", "beret")
+    char_sheet(GUARD, "sprites", "guard")
     save_sheet(cursor_sheet(), os.path.join(ASSETS, "sprites", "cursor.png"))
     save_sheet(fx_sheet(), os.path.join(ASSETS, "sprites", "fx.png"))
-    save_sheet(sprite_sheet(MARINE), os.path.join(ASSETS, "sprites2", "marine.png"))
-    save_sheet(sprite_sheet(SNIPER), os.path.join(ASSETS, "sprites2", "sniper.png"))
+    char_sheet(MARINE, "sprites2", "marine")
+    char_sheet(SNIPER, "sprites2", "sniper")
     write_manifest("sprites2", [
         {"file": "marine.png", "label": "spr_marine", "cell": [12, 16], "kind": "masked"},
         {"file": "sniper.png", "label": "spr_sniper", "cell": [12, 16], "kind": "masked"},
