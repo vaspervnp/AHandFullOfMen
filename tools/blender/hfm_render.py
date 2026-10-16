@@ -40,14 +40,19 @@ CAM_ELEVATION = 40          # degrees above the horizon
 CHAR_RES = (96, 64)         # 12x16 Mode 0 sprite * (8, 4)
 TOWER_RES = (128, 128)      # 16x32 Mode 0 stamp * (8, 4)
 UNIT = 2.8 / 24             # Blender units per visual unit (character framing)
-SUBJECTS = ["beret", "marine", "sniper", "guard", "tower", "pine", "rock", "barrel",
-            "explosion", "truck", "portraits", "banner"]
+SUBJECTS = ["beret", "marine", "sniper", "sapper", "spy", "guard", "tower", "pine", "rock",
+            "barrel", "trap", "bomb", "explosion", "truck", "depot", "portraits", "banner"]
+OPERATIVES = ("beret", "marine", "sniper", "sapper", "spy")      # portrait order = ROLE_*
 
 LOOKS = {
     "beret":  dict(uniform="green", shade="teal", hat="beret", hatc="teal", pack="olive", gun="grey"),
     "marine": dict(uniform="sky", shade="blue", hat="cap", hatc="blue", pack="grey", gun="grey"),
     "sniper": dict(uniform="red", shade="olive", hat="hood", hatc="olive", pack="olive", gun="black",
                    long_gun=True),
+    "sapper": dict(uniform="orange", shade="red", hat="cap", hatc="red", pack="grey", gun="black",
+                   big_pack=True),
+    "spy":    dict(uniform="blue", shade="black", hat="fedora", hatc="black", pack=None, gun="grey",
+                   short_gun=True),
     "guard":  dict(uniform="olive", shade="grey", hat="helmet", hatc="grey", pack="red", gun="red"),
 }
 
@@ -164,7 +169,12 @@ def build_character(look):
         parts[f"hip{side}"] = hip
     box("torso", (0.5, 0.3, 0.6), (0, 0, 1.2), look["uniform"], body)
     box("belt", (0.52, 0.32, 0.08), (0, 0, 0.93), look["shade"], body)
-    box("pack", (0.36, 0.18, 0.42), (0, 0.24, 1.2), look["pack"], body)
+    if look["pack"]:
+        if look.get("big_pack"):                      # demolition charges
+            box("pack", (0.46, 0.26, 0.56), (0, 0.28, 1.18), look["pack"], body)
+            box("charge", (0.48, 0.1, 0.12), (0, 0.42, 1.0), "bred", body)
+        else:
+            box("pack", (0.36, 0.18, 0.42), (0, 0.24, 1.2), look["pack"], body)
     for side, x in (("L", -0.32), ("R", 0.32)):
         sh = pivot(f"sh{side}", (x, 0, 1.45), body)
         box(f"arm{side}", (0.14, 0.16, 0.55), (0, 0, -0.27), look["shade"], sh)
@@ -185,9 +195,12 @@ def build_character(look):
     elif hat == "cap":
         cyl("cap", 0.17, 0.1, (0, 0, 0.13), look["hatc"], head)
         box("peak", (0.24, 0.14, 0.03), (0, -0.16, 0.09), look["hatc"], head)
+    elif hat == "fedora":
+        cyl("brim", 0.26, 0.03, (0, 0, 0.1), look["hatc"], head, verts=10)
+        cyl("crown", 0.16, 0.16, (0, 0, 0.19), look["hatc"], head, verts=10)
     elif hat == "hood":
         sphere("hood", 0.2, (0, 0.08, 0.05), look["hatc"], head, scale=(1.05, 1.0, 1.15))  # face open
-    gun_len = 1.0 if look.get("long_gun") else 0.7
+    gun_len = 1.0 if look.get("long_gun") else 0.25 if look.get("short_gun") else 0.7
     gun = box("gun", (0.06, gun_len, 0.08), (0, -gun_len / 2 + 0.1, -0.55), look["gun"],
               parts["shR"])
     parts["gun"] = gun
@@ -388,13 +401,43 @@ def build_truck(sc):                              # 3x2 tiles: 24x16 Mode 0 px, 
     frame_camera(sc, 24, 16)
 
 
+def build_depot(sc):                              # 3x2 tiles: 24x16 Mode 0 px
+    for y in (-0.55, 0.55):                          # two fuel tanks on cradles
+        cyl("tank", 0.5, 3.6, (0, y, 0.75), "grey", verts=12, rot=(0, math.radians(90), 0))
+        cyl("stripe", 0.51, 0.3, (0, y, 0.75), "bred", verts=12, rot=(0, math.radians(90), 0))
+        for x in (-1.2, 1.2):
+            box("cradle", (0.2, 0.9, 0.3), (x, y, 0.15), "black")
+    box("pipe", (0.12, 1.5, 0.12), (1.4, 0, 1.25), "black")
+    box("valve", (0.25, 0.25, 0.25), (1.4, 0, 1.4), "byel")
+    frame_camera(sc, 24, 16)
+
+
+def build_trap(sc):                               # bear trap, in a 12x16 sprite cell
+    cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=10)
+    for y in (-0.36, 0.36):                          # open jaws, teeth up
+        box("jaw", (1.0, 0.08, 0.2), (0, y, 0.12), "black")
+        for x in (-0.38, -0.13, 0.13, 0.38):
+            box("tooth", (0.09, 0.09, 0.16), (x, y * 0.85, 0.28), "white")
+    box("chain", (0.07, 0.6, 0.05), (0.6, 0.15, 0.03), "grey")
+    frame_camera(sc, 12, 16)
+
+
+def build_bomb(sc):                               # time bomb: dynamite + clock, 12x16 cell
+    for x in (-0.16, 0, 0.16):
+        cyl("stick", 0.08, 0.55, (x, 0, 0.3), "bred", verts=8)
+    box("tape", (0.5, 0.2, 0.08), (0, 0, 0.3), "black")
+    cyl("clock", 0.13, 0.05, (0, -0.12, 0.42), "pyel", verts=10, rot=(math.radians(90), 0, 0))
+    box("wire", (0.03, 0.03, 0.3), (0.12, -0.1, 0.62), "byel")
+    frame_camera(sc, 12, 16)
+
+
 PORTRAIT_RES = (16, 24)
 
 
 def build_portraits(sc):
-    """Head-and-shoulders busts of the three operatives side by side; each is
+    """Head-and-shoulders busts of the operatives side by side; each is
     rendered with its own camera framing (cameras cam_beret...)."""
-    for i, subject in enumerate(("beret", "marine", "sniper")):
+    for i, subject in enumerate(OPERATIVES):
         parts = build_character(LOOKS[subject])
         parts["root"].location = (i * 3.0, 0, 0)
         for k in ("shL", "shR"):                         # arms down by the sides
@@ -407,7 +450,7 @@ def build_portraits(sc):
         el = math.radians(8)
         cam.location = Vector((i * 3.0, -10 * math.cos(el), 1.56 + 10 * math.sin(el)))
         cam.rotation_euler = (Vector((i * 3.0, 0, 1.56)) - cam.location).to_track_quat("-Z", "Y").to_euler()
-    box("backdrop", (12, 0.1, 6), (3.0, 3.0, 1.5), "grey")
+    box("backdrop", (20, 0.1, 6), (6.0, 3.0, 1.5), "grey")
     sc.render.resolution_x, sc.render.resolution_y = PORTRAIT_RES[0] * 8, PORTRAIT_RES[1] * 4
 
 
@@ -484,7 +527,8 @@ def build_banner(sc):
 
 def render_prop(subject, out_dir, blend_dir):
     builders = {"tower": build_tower, "pine": build_pine, "rock": build_rock,
-                "barrel": build_barrel, "truck": build_truck, "banner": build_banner}
+                "barrel": build_barrel, "truck": build_truck, "banner": build_banner,
+                "depot": build_depot, "trap": build_trap, "bomb": build_bomb}
     sc, _ = open_or_build(subject, blend_dir, builders[subject])
     render_still(sc, out_dir, subject, subject)
 
@@ -500,7 +544,7 @@ def render_explosion(out_dir, blend_dir):
 
 def render_portraits(out_dir, blend_dir):
     sc, _ = open_or_build("portraits", blend_dir, build_portraits)
-    for subject in ("beret", "marine", "sniper"):
+    for subject in OPERATIVES:
         sc.camera = bpy.data.objects[f"cam_{subject}"]
         render_still(sc, out_dir, "portraits", subject)
 

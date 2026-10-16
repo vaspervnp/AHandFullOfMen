@@ -22,7 +22,7 @@ LEGEND = {
     "b": "bridge", "s": "sandbag", "t": "tracks", "x": "rubble", "G": "gate",
     "#": "scorch",
 }
-STAMPS = {"P": ("pine", 2, 3), "X": ("tower", 2, 4), "K": ("truck", 3, 2)}
+STAMPS = {"P": ("pine", 2, 3), "X": ("tower", 2, 4), "K": ("truck", 3, 2), "F": ("depot", 3, 2)}
 
 
 def main():

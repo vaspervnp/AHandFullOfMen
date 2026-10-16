@@ -15,6 +15,13 @@ items_update:
   ld a,(ix+ent.type)
   cp ET_BARREL
   jr z,.barrel
+  cp ET_BOMB
+  jr z,.barrel                  ; same fuse, bigger bang
+  cp ET_TRAP
+  jr nz,.not_trap
+  call trap_update
+  jr .next
+.not_trap:
   cp ET_FX
   jr nz,.next
   inc (ix+ent.anim)
@@ -39,6 +46,13 @@ items_update:
 ; IX = barrel. It becomes the explosion; everything within BLAST_R dies,
 ; nearby barrels catch, the tower falls if it is close enough.
 explode:
+  ld a,(ix+ent.type)            ; the time bomb blasts wider
+  cp ET_BOMB
+  ld a,BOMB_R
+  jr z,.r
+  ld a,BLAST_R
+.r:
+  ld (blast_rad),a
   ld (ix+ent.type),ET_FX
   ld (ix+ent.anim),0
   ld (ix+ent.fuse),0
@@ -86,56 +100,83 @@ explode:
   cp MAX_ENTS
   jr nz,.lp
   ; the tower
-  ld a,(tower_down)
+  ld a,(target_down)
   or a
   jr nz,.alarm
-  ld b,M01_TOWER_X
-  ld c,M01_TOWER_Y
+  ld a,(mis+MIS_TGT_X)
+  ld b,a
+  ld a,(mis+MIS_TGT_Y)
+  ld c,a
   call vis_vector_pt
   jr c,.alarm
   call vis_distance
-  cp BLAST_R+8
-  call c,destroy_tower
+  ld b,a
+  ld a,(blast_rad)
+  add a,8
+  cp b
+  call nc,destroy_target
 .alarm:
   call hud_mark_dirty
   jp alarm_all
 
-; IX = blast centre, IY = entity -> carry if within BLAST_R
+; IX = blast centre, IY = entity -> carry if within (blast_rad)
 in_blast:
   call vis_vector
   ccf
   ret nc                        ; out of range entirely
   call vis_distance
-  cp BLAST_R+1
+  ld b,a
+  ld a,(blast_rad)
+  cp b
+  ccf
   ret
 
-; Knock the radio tower down: the top half becomes snow, the base rubble.
-destroy_tower:
+; The mission's target structure is destroyed: its tiles become the ruin.
+destroy_target:
   ld a,1
-  ld (tower_down),a
-  ld hl,map_buf+M01_TOWER_ROW*MAP_W+M01_TOWER_COL
-  ld b,4
-  ld c,TILE_SNOW
-.row:
-  ld a,b
-  cp 2
-  jr nz,.fill
-  ld c,TILE_RUBBLE
-.fill:
-  ld (hl),c
-  inc hl
-  ld a,c
-  cp TILE_RUBBLE
-  jr nz,.same
-  ld a,TILE_SCORCH
-.same:
-  ld (hl),a
-  ld de,MAP_W-1
+  ld (target_down),a
+  ld a,(mis+MIS_TGT_ROW)        ; HL = map_buf cell of the top-left tile
+  ld l,a
+  ld h,0
+  add hl,hl
+  ld de,map_row_offs
   add hl,de
-  djnz .row
+  ld e,(hl)
+  inc hl
+  ld d,(hl)
+  ld hl,map_buf
+  add hl,de
+  ld a,(mis+MIS_TGT_COL)
+  ld e,a
+  ld d,0
+  add hl,de
+  ex de,hl
+  ld hl,(mis+MIS_TGT_RUIN)
+  ld a,(mis+MIS_TGT_H)
+.row:
+  push af
+  push de
+  ld a,(mis+MIS_TGT_W)
+  ld c,a
+  ld b,0
+  ldir
+  pop de
+  ex de,hl
+  ld bc,MAP_W
+  add hl,bc
+  ex de,hl
+  pop af
+  dec a
+  jr nz,.row
   call hud_mark_dirty           ; new objective
-  ld bc,M01_TOWER_COL*256+M01_TOWER_ROW
-  ld de,2*256+4
+  ld a,(mis+MIS_TGT_COL)
+  ld b,a
+  ld a,(mis+MIS_TGT_ROW)
+  ld c,a
+  ld a,(mis+MIS_TGT_W)
+  ld d,a
+  ld a,(mis+MIS_TGT_H)
+  ld e,a
   jp map_rect_changed
 
 ; Every guard drops what it is doing and joins the fight.
@@ -182,10 +223,10 @@ DRAG_REACH_X    equ 4
 DRAG_REACH_Y    equ 8
 
 drag_key:
-  ld a,(sel_cmd)
-  cp CMD_BERET
-  ret nz
   call sel_ent
+  ld a,(ix+ent.role)
+  cp ROLE_BERET
+  ret nz
   ld a,(ix+ent.flags)
   and (1<<EF_DEAD)|(1<<EF_BOARDED)
   ret nz

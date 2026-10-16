@@ -598,6 +598,16 @@ ent_frame:
   xor a
   ret
 .not_barrel:
+  cp ET_TRAP                    ; fx sheet: barrel, 3 blasts, trap, bomb
+  ld b,FR_TRAP
+  jr z,.item
+  cp ET_BOMB
+  ld b,FR_BOMB
+  jr nz,.not_item
+.item:
+  ld a,b
+  ret
+.not_item:
   cp ET_FX
   jr nz,.person
   ld a,(ix+ent.anim)            ; 3 ticks per explosion frame: 1..3

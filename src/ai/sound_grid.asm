@@ -92,10 +92,10 @@ footsteps:
 DECOY_ENT       equ MAX_ENTS-1
 
 decoy_key:
-  ld a,(sel_cmd)
-  cp CMD_BERET
-  ret nz
   call sel_ent
+  ld a,(ix+ent.role)
+  cp ROLE_BERET
+  ret nz
   bit EF_DEAD,(ix+ent.flags)
   ret nz
   ld b,(ix+ent.x)

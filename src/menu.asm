@@ -8,17 +8,75 @@ MENU_PROMPT_ROW equ 11
 DEBRIEF_PROMPT_ROW equ 23
 
 menu_run:
+  call mission_select
   call page_begin
+  call menu_mission
   ld hl,menu_lines
   call page_lines
+  ld hl,menu_keys
+  ld (page_hook),hl
   ld hl,song_title
   call music_start
   ld hl,txt_menu_start
   ld c,MENU_PROMPT_ROW
   jp page_wait_fire
 
+; Mission name + briefing (rows 8, 9) for (cur_mission).
+menu_mission:
+  ld b,8
+  call page_clear_row
+  ld b,9
+  call page_clear_row
+  ld a,PEN_YELLOW
+  call text_ink
+  ld hl,(mis+MIS_TXT_NAME)
+  ld c,8
+  call print_center
+  ld a,PEN_SNOW
+  call text_ink
+  ld hl,(mis+MIS_TXT_BRIEF)
+  ld c,9
+  jp print_center
+
+; B = character row: paint it with the page colour
+page_clear_row:
+  ld a,b
+  add a,a
+  add a,a
+  add a,a
+  ld c,a
+  ld a,MENU_PAPER
+  call pen_byte
+  ld b,0
+  ld de,SCR_W*256+8
+  jp fill_rect
+
+; Menu keys while waiting: 1 / 2 ... choose the mission.
+menu_keys:
+  ld a,KEY_1
+  call kbd_hit
+  ld a,0
+  jr nz,.pick
+  ld a,KEY_2
+  call kbd_hit
+  ret z
+  ld a,1
+.pick:
+  cp MISSION_COUNT
+  ret nc
+  ld (cur_mission),a
+  call mission_select
+  jp menu_mission
+
 ; Debrief: result, reason, objective checklist, stats.
 debrief_run:
+  ld hl,(mis+MIS_TXT_OBJ)       ; this mission's objective + sentries
+  ld de,txt_obj_tower+4
+  ld bc,26
+  ldir
+  ld a,(mis+MIS_GUARDS)
+  add a,'0'
+  ld (txt_stat_guards_n+4),a
   ; result + reason
   ld a,(game_over)
   cp 2
@@ -42,7 +100,7 @@ debrief_run:
   ld l,a
   ld (deb_reason_ptr),hl
   ; checklist marks
-  ld a,(tower_down)
+  ld a,(target_down)
   ld hl,txt_obj_tower+1
   call set_mark
   ld a,(end_reason)
@@ -170,9 +228,13 @@ page_begin:
   call fill_rect
   ld bc,0
   call scr_addr
+  ld bc,&7F00+RAM_BANK7          ; the banner lives in bank 7
+  out (c),c
   ld hl,title_gfx
   ld bc,SCR_W*256+56
   call blit_plain
+  ld bc,&7F00+RAM_BASE64
+  out (c),c
   ld a,MENU_PAPER
   ld (text_paper),a
   ret
@@ -220,6 +282,10 @@ page_wait_fire:
   if TEST
   call test_input
   endif
+  ld hl,(page_hook)             ; page-specific keys (the menu's)
+  ld a,h
+  or l
+  call nz,jp_hl
   ld hl,menu_blink
   inc (hl)
   ld a,(hl)
@@ -238,59 +304,11 @@ page_wait_fire:
   call print_center
 .input:
   call joy_fire_hit
-  jp nz,music_stop
-  jr .loop
+  jr z,.loop
+  ld hl,0
+  ld (page_hook),hl
+  jp music_stop
 
-; ---------------------------------------------------------------------------
-; Texts
-; ---------------------------------------------------------------------------
+jp_hl:
+  jp (hl)
 
-; row, ink, text
-menu_lines:
-  db 8,  PEN_YELLOW, "MISSION 1: BAPTISM OF FIRE",0
-  db 9,  PEN_SNOW,   "NORWAY - DESTROY THE RADIO TOWER",0
-  db 13, PEN_RED,    "- KEYBOARD CONTROLS -",0
-  db 15, PEN_TEXT,   "CURSOR KEYS / QAOP  MOVE CROSSHAIR ",0
-  db 16, PEN_TEXT,   "SPACE / COPY / FIRE SELECT,GO,ATTACK",0
-  db 17, PEN_TEXT,   "RETURN / C          CRAWL OR STAND  ",0
-  db 18, PEN_TEXT,   "1  2  3             PICK COMMANDO   ",0
-  db 19, PEN_TEXT,   "D   G               DECOY   DRAG    ",0
-  db 20, PEN_TEXT,   "V  (OR POINT AT)    GUARD VIEW CONE ",0
-  db 21, PEN_TEXT,   "SCREEN EDGE         SCROLL THE MAP  ",0
-  db 22, PEN_TEXT,   "ESC                 BACK TO MENU    ",0
-  db 24, PEN_SNOW,   "REVIVE8BIT 2026",0
-  db &FF
-txt_menu_start:
-  db "PRESS SPACE OR FIRE TO START",0
-
-debrief_lines:
-  db 12, PEN_RED,    "- OBJECTIVES -",0
-  db 14, PEN_TEXT
-txt_obj_tower:
-  db "( ) DESTROY THE RADIO TOWER   ",0
-  db 15, PEN_TEXT
-txt_obj_escape:
-  db "( ) ESCAPE IN THE TRUCK       ",0
-  db 16, PEN_TEXT
-txt_obj_quiet:
-  db "( ) NO ALARM RAISED  (BONUS)  ",0
-  db 18, PEN_SNOW,   "SENTRIES DOWN            "
-txt_stat_guards_n:
-  db "0 / 5",0
-  db 19, PEN_SNOW,   "SQUAD MEMBERS ALIVE      "
-txt_stat_alive_n:
-  db "0 / 3",0
-  db 20, PEN_SNOW,   "MISSION TIME             "
-txt_stat_time_n:
-  db "00:00",0
-  db &FF
-txt_continue:
-  db "PRESS SPACE OR FIRE",0
-
-txt_accomplished:   db "MISSION ACCOMPLISHED",0
-txt_mission_failed: db "MISSION FAILED",0
-reason_texts:
-  dw txt_reason_lost, txt_reason_reinforced, txt_reason_escaped
-txt_reason_lost:       db "THE WHOLE SQUAD WAS LOST",0
-txt_reason_reinforced: db "ENEMY REINFORCEMENTS ARRIVED",0
-txt_reason_escaped:    db "THE SQUAD GOT AWAY IN THE TRUCK",0

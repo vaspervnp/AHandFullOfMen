@@ -14,6 +14,8 @@ CRTC_DATA       equ &BD
 GA_MODE0_NOROM  equ &8C         ; mode 0, upper+lower ROM disabled
 RAM_BASE64      equ &C0         ; default 64K bank configuration
 RAM_SPRITES     equ &C4         ; bank 4 at &4000 (beret, guard, cursor, fx)
+RAM_BANK6       equ &C6         ; bank 6 at &4000 (Sapper, Spy)
+RAM_BANK7       equ &C7         ; bank 7 at &4000 (title art, mission maps)
 
 ; --- Screen layout ----------------------------------------------------------
 SCREEN          equ &C000
@@ -54,6 +56,8 @@ FR_CRAWL_A      equ 15
 FR_CRAWL_B      equ 18
 FR_ATTACK       equ 21
 FR_CORPSE       equ 24
+FR_TRAP         equ 4           ; fx sheet frames
+FR_BOMB         equ 5
 
 ; Directions (clockwise from north)
 DIR_N           equ 0
@@ -73,6 +77,8 @@ ET_GUARD        equ 2
 ET_DECOY        equ 3
 ET_BARREL       equ 4
 ET_FX           equ 5           ; explosion animation
+ET_TRAP         equ 6           ; Sapper's bear trap
+ET_BOMB         equ 7           ; Sapper's time bomb
 
 struct ent
 type    defb 0
@@ -97,7 +103,8 @@ fire    defb 0          ; guard shot cooldown
 sbank   defb 0          ; RAM config holding the sprite sheet (&C4/&C5)
 drag    defb 0          ; 1 + index of the entity being dragged
 fuse    defb 0          ; barrel chain-reaction countdown
-pad     defs 9
+role    defb 0          ; commando: ROLE_* (what he can do)
+pad     defs 8
 endstruct
 ENT_SIZE        equ {sizeof}ent
   assert ENT_SIZE==32
@@ -108,6 +115,7 @@ EF_MOVING       equ 1
 EF_DEAD         equ 2
 EF_SELECTED     equ 3
 EF_BOARDED      equ 4           ; commando is in the escape truck
+EF_DISGUISE     equ 5           ; the Spy in a German uniform
 
 ; Entity states
 ST_IDLE         equ 0
@@ -120,6 +128,7 @@ AI_PATROL       equ 0
 AI_INVESTIGATE  equ 1
 AI_SUSPICIOUS   equ 2
 AI_ALARM        equ 3
+AI_DISTRACTED   equ 4           ; held in conversation by the Spy
 
 ; --- Keyboard matrix (line, bit) --------------------------------------------
 KEY_UP          equ &00         ; cursor up     line 0 bit 0
@@ -148,3 +157,28 @@ KEY_JLEFT       equ &92
 KEY_JRIGHT      equ &93
 KEY_JFIRE2      equ &94
 KEY_JFIRE1      equ &95
+
+; Mission descriptor (src/missions/missions.asm)
+; descriptor fields (MIS_SIZE bytes)
+MIS_SPAWNS      equ 0           ; spawn records (dw)
+MIS_MAP         equ 2           ; map tiles in RAM bank 7 (dw)
+MIS_CAM_X       equ 4
+MIS_CAM_Y       equ 5
+MIS_TGT_COL     equ 6           ; the structure a blast destroys: tiles
+MIS_TGT_ROW     equ 7
+MIS_TGT_W       equ 8
+MIS_TGT_H       equ 9
+MIS_TGT_X       equ 10          ; ... and the point a blast must reach (world)
+MIS_TGT_Y       equ 11
+MIS_TGT_RUIN    equ 12          ; tiles it becomes, row by row (dw)
+MIS_TRUCK_X0    equ 14          ; extraction footprint (world, inclusive)
+MIS_TRUCK_X1    equ 15
+MIS_TRUCK_Y0    equ 16
+MIS_TRUCK_Y1    equ 17
+MIS_TXT_NAME    equ 18          ; menu: "MISSION n: NAME" (dw)
+MIS_TXT_BRIEF   equ 20          ; menu: one-line briefing (dw)
+MIS_TXT_HUD1    equ 22          ; HUD objective before / after the blast (dw)
+MIS_TXT_HUD2    equ 24
+MIS_TXT_OBJ     equ 26          ; debrief checklist line, 26 chars (dw)
+MIS_GUARDS      equ 28          ; sentries, for the debrief tally
+MIS_SIZE        equ 29

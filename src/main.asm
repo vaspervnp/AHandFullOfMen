@@ -32,6 +32,9 @@ FUZZ_SEED equ 1
   ifndef FUZZ_TICKS
 FUZZ_TICKS equ 3000
   endif
+  ifndef TEST_MISSION
+TEST_MISSION equ 0              ; mission a test (or the first menu) starts on
+  endif
   ifndef TEST_MENU
 TEST_MENU equ 0                 ; test scenarios skip the menu unless set
   endif
@@ -70,10 +73,7 @@ mission_start:
   call palette_black
   ld a,&C0
   ld (back_hi),a
-  ld hl,m01_spawns
-  ld de,map_mission01
-  ld bc,M01_CAM_X*256+M01_CAM_Y
-  call mission_load
+  call mission_begin
   if TEST
   call test_setup
   endif
@@ -117,6 +117,14 @@ main_loop:
   dec (hl)
   jr nz,.live
   call debrief_run
+  ld a,(game_over)              ; accomplished: on to the next mission
+  cp 2
+  jp nz,title
+  ld a,(cur_mission)
+  inc a
+  cp MISSION_COUNT
+  jp nc,title
+  ld (cur_mission),a
   jp title
 .live:
   call update_cursor_frame
@@ -356,6 +364,7 @@ test_setup:
   include "entities/commandos.asm"
   include "entities/guards.asm"
   include "entities/items.asm"
+  include "entities/abilities.asm"
   include "ai/los.asm"
   include "ai/fsm.asm"
   include "ai/sound_grid.asm"
@@ -368,7 +377,6 @@ test_setup:
   include "data/luts.asm"
   include "data/palettes.asm"
   include "data/tileattrs.asm"
-  include "missions/mission01.asm"
 
 ; ---------------------------------------------------------------------------
 ; Variables (static, zero-initialised in the binary)
@@ -398,8 +406,13 @@ alarm:          db 0
 game_over:      db 0           ; 0 playing, 1 failed, 2 accomplished
 end_reason:     db 0
 end_timer:      db 0
-tower_down:     db 0
+target_down:    db 0
+cur_mission:    db TEST_MISSION   ; index into mission_table
+mis:            defs MIS_SIZE     ; the current mission's descriptor
 ammo:           db 0
+traps:          db 0            ; Sapper's kit
+bombs:          db 0
+blast_rad:      db 0
 click_type:     db 0
 alarm_secs:     db 0
 sec_ticks:      db 0
@@ -439,6 +452,8 @@ cur_bank:       db 0
 ce_ptr:         dw 0
 render_serial:  db 0
 hp_idx:         db 0
+hp_role:        db 0
+bounce:         defs MAP_W         ; mission_load copies maps out of bank 7
 hp_x:           db 0
 hp_frame:       db 0
 hp_hp:          db 0
@@ -450,6 +465,7 @@ hud_cache_80:   defs HUD_CACHE_SIZE,&FF
 text_words:     defs 32
 text_paper:     db PEN_HUD
 menu_blink:     db 0
+page_hook:      dw 0            ; called each frame by page_wait_fire
 hud_bg:         db 0
 cone_guard:     db CONE_NONE
 cone_pinned:    db CONE_NONE
@@ -527,7 +543,10 @@ STACK_CANARY_LEN equ 128        ; must stay untouched: the stack's lower half
 data_start:
   include "tiles.asm"           ; generated: build/tiles.asm
   include "ui.asm"              ; generated: build/ui.asm
-  include "mission01_map.asm"   ; generated: build/mission01_map.asm
+  include "missions/missions.asm"
+  include "data/texts.asm"
+  include "missions/mission01.asm"
+  include "missions/mission02.asm"
 map_buf:        defs MAP_W*MAP_H
 path_table:     defs PATH_SLOTS*PATH_SLOT_SIZE
 path_dist:      defs PATH_W*PATH_H
@@ -573,4 +592,34 @@ sprites2_end:
 
   if TEST==0
   save "sprites2.bin",sprites2_start,sprites2_end-sprites2_start
+  endif
+
+; ---------------------------------------------------------------------------
+; RAM bank 6 (paged at &4000): Sapper and Spy sheets
+; ---------------------------------------------------------------------------
+  bank 6
+  org &4000
+sprites3_start:
+  include "sprites3.asm"        ; generated: build/sprites3.asm
+sprites3_end:
+  assert sprites3_end<=&8000
+
+  if TEST==0
+  save "sprites3.bin",sprites3_start,sprites3_end-sprites3_start
+  endif
+
+; ---------------------------------------------------------------------------
+; RAM bank 7 (paged at &4000 when needed): title art, mission map sources
+; ---------------------------------------------------------------------------
+  bank 7
+  org &4000
+bank7_start:
+  include "bank7_gfx.asm"       ; generated: build/bank7_gfx.asm (title_gfx)
+  include "mission01_map.asm"   ; generated: build/mission01_map.asm
+  include "mission02_map.asm"   ; generated: build/mission02_map.asm
+bank7_end:
+  assert bank7_end<=&8000
+
+  if TEST==0
+  save "bank7.bin",bank7_start,bank7_end-bank7_start
   endif

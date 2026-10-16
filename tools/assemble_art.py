@@ -9,8 +9,8 @@ Inputs
   renders_dir   assets/renders (tools/blender/hfm_render.py output)
 Outputs (in build_dir, palette-exact PNGs, then clamped by Aseprite)
   norway.png    tile sheet: terrain + pine/tower/truck/rock composited on it
-  fx.png        barrel + 3 explosion frames (12x16 masked cells)
-  portraits.png HUD portraits, 3 x 16x24
+  fx.png        barrel, 3 explosion frames, bear trap, time bomb (12x16 masked cells)
+  portraits.png HUD portraits, 5 x 16x24 (ROLE_* order)
   title.png     menu banner, 160x56
 """
 import os
@@ -32,8 +32,12 @@ def render_canvas(path, priority=()):
 
 def tiles_sheet(terrain_png, renders):
     sheet = from_png(terrain_png)
-    tiles = [crop(sheet, (i % SHEET_COLS) * 8, (i // SHEET_COLS) * 8, 8, 8)
-             for i in range(len(TILE_NAMES))]
+    cell = lambda i: crop(sheet, (i % SHEET_COLS) * 8, (i // SHEET_COLS) * 8, 8, 8)  # noqa: E731
+    snow = cell(TILE_NAMES.index("snow"))
+    tiles = []
+    for i in range(len(TILE_NAMES)):     # cells not painted in Aseprite: plain snow
+        c = cell(i)
+        tiles.append(c if any(p is not None for row in c.px for p in row) else crop(snow, 0, 0, 8, 8))
     for name, (first, w, h) in STAMPS.items():
         art = render_canvas(os.path.join(renders, name, name + ".png"), priority=(BYEL, BRED))
         if name != "tower":                       # the lattice is drawn in black already
@@ -53,7 +57,7 @@ def tiles_sheet(terrain_png, renders):
 def fx_sheet(renders):
     cells = []
     for name, sub in (("barrel", "barrel"), ("frame1", "explosion"), ("frame2", "explosion"),
-                      ("frame3", "explosion")):
+                      ("frame3", "explosion"), ("trap", "trap"), ("bomb", "bomb")):
         cv = render_canvas(os.path.join(renders, sub, name + ".png"), priority=(BYEL, PYEL))
         cv.outline(BLK)
         cells.append(cv)
@@ -62,7 +66,7 @@ def fx_sheet(renders):
 
 def portraits(renders):
     return [render_canvas(os.path.join(renders, "portraits", s + ".png"), priority=(BLK, RED),
-                          ) for s in ("beret", "marine", "sniper")]
+                          ) for s in ("beret", "marine", "sniper", "sapper", "spy")]
 
 
 def title(renders):

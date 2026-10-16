@@ -108,7 +108,7 @@ def check_t10_decoy(r):
 
 
 def check_t11_tower(r):
-    assert r.byte("tower_down") == 1, "radio tower still standing"
+    assert r.byte("target_down") == 1, "radio tower still standing"
     assert r.byte("alarm") == 1, "an explosion must raise the alarm"
     assert r.ent(8, "type") == 0, "barrel should be gone"
     assert r.byte("ammo") == 4, f"ammo {r.byte('ammo')}, expected 4"
@@ -174,6 +174,57 @@ def check_t21_cone_patrol(r):
     assert r.byte("cone_pinned") == 7, f"cone_pinned={r.byte('cone_pinned')}"
     assert r.byte("cone_count") > 20, f"cone has {r.byte('cone_count')} dots"
     assert r.ent(7, "x") > 30, f"river guard at x={r.ent(7, 'x')}, should be patrolling east"
+
+
+TILE_RUBBLE = 32
+ROLE_SAPPER, ROLE_SPY = 3, 4
+EF_DISGUISE = 32
+ENT["role"] = 23
+
+
+def check_t22_m2_boot(r):
+    assert r.byte("cur_mission") == 1
+    assert r.ent(1, "role") == ROLE_SAPPER and r.ent(2, "role") == ROLE_SPY, "wrong squad"
+    guards = sum(1 for i in range(16) if r.ent(i, "type") == 2)
+    assert guards == 7, f"{guards} sentries"
+    assert r.byte("view_dirty") == 0
+    assert r.byte("alarm") == 0, "spotted at the start"
+
+
+def check_t23_trap(r):
+    assert r.ent(7, "flags") & EF_DEAD, "the river sentry didn't step in the trap"
+    assert r.byte("alarm") == 0, "a trap must be silent"
+    assert r.byte("traps") == 1
+
+
+def check_t24_bomb(r):
+    assert r.byte("target_down") == 1, "the depot is still there"
+    assert r.byte("map_buf", 6 * 40 + 23) == TILE_RUBBLE, "depot tiles not replaced"
+    assert r.byte("alarm") == 1
+    assert r.byte("bombs") == 0
+
+
+def check_t25_disguise(r):
+    assert r.ent(2, "flags") & EF_DISGUISE, "no uniform"
+    assert r.byte("alarm") == 0 and r.ent(3, "ai") == 0, \
+        f"the Spy in uniform was spotted (ai {r.ent(3, 'ai')})"
+
+
+def check_t26_distract(r):
+    assert r.ent(3, "ai") == 4, f"gate sentry AI {r.ent(3, 'ai')}, expected DISTRACTED"
+    assert r.ent(3, "dir") in (3, 4, 5), f"gate sentry faces {r.ent(3, 'dir')}, not the Spy (south)"
+    assert r.ent(3, "state") == 0, "a distracted sentry stands still"
+    assert r.byte("alarm") == 0
+
+
+def check_t27_syringe(r):
+    assert r.ent(4, "flags") & EF_DEAD, "syringe missed"
+    assert r.byte("alarm") == 0, "the syringe must be silent"
+
+
+def check_t28_mission_select(r):
+    assert r.byte("cur_mission") == 1, "key 2 didn't pick Mission 2"
+    assert r.ent(1, "role") == ROLE_SAPPER, "Mission 2's squad not spawned"
 
 
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}

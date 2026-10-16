@@ -11,10 +11,12 @@ TILE_NAMES = [
     "rubble", "gate", "hud_bg", "hud_edge",
     "truck0", "truck1", "truck2", "truck3", "truck4", "truck5",     # 3x2 stamp
     "scorch",
+    "depot0", "depot1", "depot2", "depot3", "depot4", "depot5",     # 3x2 stamp
 ]
 
 # Multi-tile props rendered in Blender and composited onto the ground
 # painted in assets/aseprite/terrain.aseprite: name -> (first tile, w, h)
 STAMPS = {"pine": ("pine0", 2, 3), "tower": ("tower0", 2, 4), "truck": ("truck0", 3, 2),
-          "rock": ("rock", 1, 1)}
+          "rock": ("rock", 1, 1), "depot": ("depot0", 3, 2)}
+# Stamp cells beyond the end of terrain.aseprite get plain snow underneath.
 SHEET_COLS = 8

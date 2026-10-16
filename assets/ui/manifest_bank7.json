@@ -1,0 +1,13 @@
+{
+  "sheets": [
+    {
+      "file": "title.png",
+      "label": "title_gfx",
+      "cell": [
+        160,
+        56
+      ],
+      "kind": "plain"
+    }
+  ]
+}

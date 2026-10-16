@@ -20,10 +20,11 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 import cpcsim  # noqa: E402
 
 ENT_SIZE, MAX_ENTS = 32, 16
-ET_MAX = 5                       # highest entity type (ET_FX) in src/defs.asm
+ET_MAX = 7                       # highest entity type (ET_BOMB) in src/defs.asm
 
 
 def build(seed, ticks):
+    os.makedirs(os.path.join(ROOT, "build", "tests"), exist_ok=True)
     out = f"tests/fuzz_{seed}"
     r = subprocess.run(["rasm", "-amper", "-v2", "-I../src", "-I.", "-DFUZZ=1",
                         f"-DFUZZ_SEED={seed}", f"-DFUZZ_TICKS={ticks}", "../tests/fuzz.asm",

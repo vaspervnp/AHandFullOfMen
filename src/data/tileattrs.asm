@@ -53,3 +53,9 @@ tile_attrs:
   db TF_OPAQUE                  ; 40 truck4
   db TF_OPAQUE                  ; 41 truck5
   db 0                          ; 42 scorch
+  db TF_SOLID|TF_OPAQUE         ; 43 depot0 (fuel tanks, 3x2)
+  db TF_SOLID|TF_OPAQUE         ; 44 depot1
+  db TF_SOLID|TF_OPAQUE         ; 45 depot2
+  db TF_SOLID|TF_OPAQUE         ; 46 depot3
+  db TF_SOLID|TF_OPAQUE         ; 47 depot4
+  db TF_SOLID|TF_OPAQUE         ; 48 depot5

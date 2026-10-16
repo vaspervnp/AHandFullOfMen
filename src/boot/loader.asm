@@ -6,6 +6,8 @@
 ;   CODE.BIN    -> &0040 (base RAM)
 ;   SPRITES.BIN -> &4000 with RAM bank 4 paged in (&7FC4)
 ;   SPRITES2.BIN-> &4000 with RAM bank 5 paged in (&7FC5)
+;   BANK7.BIN   -> &4000 with RAM bank 7 paged in (&7FC7): title art, maps
+;   SPRITES3.BIN-> &4000 with RAM bank 6 paged in (&7FC6): Sapper, Spy
 ;   DATA.BIN    -> &4000 (base RAM)
 ; then stop the drive motor, take over the machine and jump to the game.
 ; ===========================================================================
@@ -28,6 +30,16 @@ loader:
   ld bc,&7FC5
   out (c),c
   ld hl,fn_sprites2
+  ld de,&4000
+  call load_file
+  ld bc,&7FC7
+  out (c),c
+  ld hl,fn_bank7
+  ld de,&4000
+  call load_file
+  ld bc,&7FC6
+  out (c),c
+  ld hl,fn_sprites3
   ld de,&4000
   call load_file
   ld bc,&7FC0
@@ -64,3 +76,5 @@ fn_code:    db "CODE    .BIN"
 fn_sprites: db "SPRITES .BIN"
 fn_sprites2:db "SPRITES2.BIN"
 fn_data:    db "DATA    .BIN"
+fn_bank7:   db "BANK7   .BIN"
+fn_sprites3:db "SPRITES3.BIN"

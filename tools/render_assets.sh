@@ -5,8 +5,8 @@
 #
 # Sources of truth
 #   assets/blender/*.blend      3D: operatives, sentry, radio tower, pine,
-#                               rock, barrel, explosion, truck, portraits,
-#                               title banner (created by the render script
+#                               rock, barrel, bear trap, time bomb, explosion,
+#                               truck, fuel depot, portraits, title banner (created by the render script
 #                               on first run, then edited in Blender)
 #   assets/aseprite/terrain.aseprite  8x8 terrain/building/HUD tiles (the
 #                               prop cells hold the ground under the props)
@@ -37,7 +37,7 @@ export_ase() {  # <in.aseprite> <out.png>
   echo "aseprite: $1 -> $2"
 }
 
-mkdir -p build/art assets/renders assets/aseprite assets/blender
+mkdir -p build/art assets/renders assets/aseprite assets/blender assets/sprites3
 "$BLENDER" -b --factory-startup --python "$(winpath tools/blender/hfm_render.py)" \
   -- "$(winpath assets/renders)" "$(winpath assets/blender)" 2>&1 | grep -E "HFM_RENDERED|Error|Traceback"
 
@@ -45,7 +45,7 @@ export_ase assets/aseprite/terrain.aseprite build/art/terrain.png
 export_ase assets/aseprite/font.aseprite assets/ui/font.png
 export_ase assets/aseprite/cursor.aseprite assets/sprites/cursor.png
 
-for spec in sprites:beret sprites:guard sprites2:marine sprites2:sniper; do
+for spec in sprites:beret sprites:guard sprites2:marine sprites2:sniper sprites3:sapper sprites3:spy; do
   folder=${spec%%:*}; name=${spec##*:}
   python3 tools/renders2sheet.py assets/renders "$name" "build/art/${name}.png"
   clamp "build/art/${name}.png" "assets/aseprite/${name}.aseprite" "assets/${folder}/${name}.png"

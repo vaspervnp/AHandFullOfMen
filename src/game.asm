@@ -2,6 +2,34 @@
 ; Mission setup and end-of-mission checks
 ; ===========================================================================
 
+; Start mission (cur_mission): descriptor -> mis_*, then mission_load.
+mission_begin:
+  call mission_select
+  ld hl,(mis+MIS_SPAWNS)
+  ld de,(mis+MIS_MAP)
+  ld a,(mis+MIS_CAM_X)
+  ld b,a
+  ld a,(mis+MIS_CAM_Y)
+  ld c,a
+  jp mission_load
+
+; Copy the descriptor of (cur_mission) into mis (menu texts need it too).
+mission_select:
+  ld a,(cur_mission)
+  add a,a
+  ld l,a
+  ld h,0
+  ld de,mission_table
+  add hl,de
+  ld a,(hl)
+  inc hl
+  ld h,(hl)
+  ld l,a
+  ld de,mis
+  ld bc,MIS_SIZE
+  ldir
+  ret
+
 ; HL = spawn records, DE = map tiles, B = cam x, C = cam y
 mission_load:
   push hl
@@ -9,10 +37,28 @@ mission_load:
   ld (cam_x),a
   ld a,c
   ld (cam_y),a
-  ex de,hl
-  ld de,map_buf
-  ld bc,MAP_W*MAP_H
+  ex de,hl                      ; map source (bank 7) -> map_buf, a row
+  ld de,map_buf                 ; at a time through the bounce buffer
+  ld a,MAP_H
+.map:
+  push af
+  ld bc,&7F00+RAM_BANK7
+  out (c),c
+  push de
+  ld de,bounce
+  ld bc,MAP_W
   ldir
+  pop de
+  ld bc,&7F00+RAM_BASE64
+  out (c),c
+  push hl
+  ld hl,bounce
+  ld bc,MAP_W
+  ldir
+  pop hl
+  pop af
+  dec a
+  jr nz,.map
   ; clear entity table
   ld hl,ent_table
   ld de,ent_table+1
@@ -83,6 +129,10 @@ mission_load:
   ld (hl),d
   pop hl
   ld a,(ix+ent.type)
+  cp ET_COMMANDO
+  jr nz,.not_cmd
+  ld (ix+ent.role),e            ; commandos: the route word is the role
+.not_cmd:
   cp ET_GUARD
   jr nz,.next
   ld (ix+ent.ai_seen),&FF
@@ -100,12 +150,16 @@ mission_load:
   ld (sel_cmd),a
   ld (alarm),a
   ld (game_over),a
-  ld (tower_down),a
+  ld (target_down),a
   ld (sec_ticks),a
   ld (mission_secs),a
   ld (mission_secs+1),a
   ld a,RIFLE_AMMO
   ld (ammo),a
+  ld a,TRAP_COUNT
+  ld (traps),a
+  ld a,BOMB_COUNT
+  ld (bombs),a
   ld a,SCR_W/2
   ld (cursor_x),a
   ld a,PLAY_H/2
@@ -192,7 +246,7 @@ check_end:
   or a
   ld a,END_LOST
   jr z,end_fail
-  ld a,(tower_down)
+  ld a,(target_down)
   or a
   ret z
   ld a,c

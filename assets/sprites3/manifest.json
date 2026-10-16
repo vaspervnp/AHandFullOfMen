@@ -1,0 +1,22 @@
+{
+  "sheets": [
+    {
+      "file": "sapper.png",
+      "label": "spr_sapper",
+      "cell": [
+        12,
+        16
+      ],
+      "kind": "masked"
+    },
+    {
+      "file": "spy.png",
+      "label": "spr_spy",
+      "cell": [
+        12,
+        16
+      ],
+      "kind": "masked"
+    }
+  ]
+}

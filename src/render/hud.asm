@@ -91,12 +91,15 @@ hud_contents:
   ld (text_paper),a
   ld a,PEN_TEXT
   call text_ink
-  ld a,(sel_cmd)
+  call sel_ent
+  ld a,(ix+ent.role)
+  add a,a
   add a,a
   ld l,a
   ld h,0
-  ld de,cmd_names
+  ld de,role_texts              ; name, kit
   add hl,de
+  push hl
   ld a,(hl)
   inc hl
   ld h,(hl)
@@ -115,6 +118,9 @@ hud_contents:
   ld a,(ix+ent.drag)
   or a
   jr nz,.mode
+  ld hl,txt_disguised
+  bit EF_DISGUISE,(ix+ent.flags)
+  jr nz,.mode
   ld hl,txt_crawl
   bit EF_CRAWL,(ix+ent.flags)
   jr nz,.mode
@@ -123,28 +129,32 @@ hud_contents:
   ld c,20
   call hud_print
 
-  ; weapon line
-  ld a,(sel_cmd)
-  ld hl,txt_kit_beret
-  or a
-  jr z,.kit
-  ld hl,txt_kit_marine
-  dec a
-  jr z,.kit
-  ld a,(ammo)                   ; "RIFLE  n ROUNDS"
+  ; kit line (the Sniper's shows his rounds left)
+  ld a,(ammo)
   call num2
   ld a,(num_buf+1)
   ld (txt_kit_sniper_n),a
-  ld hl,txt_kit_sniper
-.kit:
+  ld a,(traps)                  ; ... and the Sapper's traps and bombs
+  add a,'0'
+  ld (txt_kit_sapper_t),a
+  ld a,(bombs)
+  add a,'0'
+  ld (txt_kit_sapper_b),a
+  pop hl
+  inc hl
+  inc hl
+  ld a,(hl)
+  inc hl
+  ld h,(hl)
+  ld l,a
   ld c,21
   call hud_print
 
-  ld hl,txt_objective
-  ld a,(tower_down)
+  ld hl,(mis+MIS_TXT_HUD1)
+  ld a,(target_down)
   or a
   jr z,.obj
-  ld hl,txt_objective2
+  ld hl,(mis+MIS_TXT_HUD2)
 .obj:
   ld c,22
   call hud_print
@@ -224,6 +234,8 @@ hud_portrait:
   cp c
   ret z
   ld (hl),c
+  ld a,(ix+ent.role)
+  ld (hp_role),a
   ld a,(hp_idx)
   ld b,a
   add a,a                       ; x = 2 + idx*10
@@ -250,7 +262,7 @@ hud_portrait:
   ld a,(hp_frame)
   call fill_rect
   ; portrait image
-  ld a,(hp_idx)
+  ld a,(hp_role)
   ld l,a
   ld h,0
   add hl,hl                     ; * 192
@@ -689,24 +701,3 @@ glyph_index:
 glyph_punct:
   db ".:!?-/%()',>",0
 
-cmd_names:
-  dw txt_beret, txt_marine, txt_sniper
-txt_beret:      db "TINY - GREEN BERET    ",0
-txt_marine:     db "FINS - MARINE         ",0
-txt_sniper:     db "DUKE - SNIPER         ",0
-txt_stand:      db "STANDING     ",0
-txt_crawl:      db "CRAWLING     ",0
-txt_dead:       db "K.I.A.       ",0
-txt_truck:      db "IN THE TRUCK ",0
-txt_drag:       db "DRAGGING     ",0
-txt_kit_beret:  db "KNIFE  DECOY  ",0
-txt_kit_marine: db "HARPOON  SCUBA",0
-txt_kit_sniper: db "RIFLE  "
-txt_kit_sniper_n: db "5 SHOTS",0
-txt_objective:  db "DESTROY RADIO TOWER",0
-txt_objective2: db "GET TO THE TRUCK!  ",0
-txt_quiet:      db "ALL QUIET       ",0
-txt_alarm:      db "ALARM! "
-txt_alarm_n:    db "60      ",0
-txt_done:       db "MISSION COMPLETE",0
-txt_failed:     db "MISSION FAILED  ",0

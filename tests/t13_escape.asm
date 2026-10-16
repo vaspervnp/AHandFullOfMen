@@ -2,7 +2,7 @@
 TEST equ 1
 macro SETUP
   ld a,1
-  ld (tower_down),a
+  ld (target_down),a
   ld a,1                        ; Marine and Sniper fell earlier
   call ent_ptr
   set EF_DEAD,(ix+ent.flags)

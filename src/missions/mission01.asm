@@ -5,12 +5,13 @@
 ; tile row r -> feet y = r*8+7)
 ; ===========================================================================
 
-; Entity spawn records: type, x, y, dir, gfx, bank, hp, route
+; Entity spawn records: type, x, y, dir, gfx, bank, hp, route (guards) or
+; role (commandos)
 m01_spawns:
   ; commandos (entities 0..2)
-  db ET_COMMANDO, 18, 239, DIR_N : dw spr_beret : db &C4, 8 : dw 0
-  db ET_COMMANDO, 26, 247, DIR_N : dw spr_marine : db &C5, 8 : dw 0
-  db ET_COMMANDO, 10, 247, DIR_N : dw spr_sniper : db &C5, 8 : dw 0
+  db ET_COMMANDO, 18, 239, DIR_N : dw spr_beret : db &C4, 8 : dw ROLE_BERET
+  db ET_COMMANDO, 26, 247, DIR_N : dw spr_marine : db &C5, 8 : dw ROLE_MARINE
+  db ET_COMMANDO, 10, 247, DIR_N : dw spr_sniper : db &C5, 8 : dw ROLE_SNIPER
   ; sentries (entities 3..7)
   db ET_GUARD,  98, 151, DIR_E : dw spr_guard : db &C4, 0 : dw route_bridge
   db ET_GUARD, 122, 111, DIR_S : dw spr_guard : db &C4, 0 : dw route_gate

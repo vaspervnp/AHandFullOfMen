@@ -6,10 +6,12 @@
 ;   2 Sniper      "Duke"  rifle (long range, needs line of sight, 5 rounds)
 ; ===========================================================================
 
-CMD_COUNT       equ 3
-CMD_BERET       equ 0
-CMD_MARINE      equ 1
-CMD_SNIPER      equ 2
+CMD_COUNT       equ 3           ; commandos are entities 0..2
+ROLE_BERET      equ 0           ; ent.role: set from the mission's spawn list
+ROLE_MARINE     equ 1
+ROLE_SNIPER     equ 2
+ROLE_SAPPER     equ 3
+ROLE_SPY        equ 4
 
 KNIFE_RANGE_X   equ 3
 KNIFE_RANGE_Y   equ 6
@@ -34,12 +36,12 @@ commandos_input:
   call kbd_hit
   ld a,2
   jr nz,.select
-  ld a,KEY_D
+  ld a,KEY_D                    ; role abilities
   call kbd_hit
-  jp nz,decoy_key
+  jp nz,ability_d
   ld a,KEY_G
   call kbd_hit
-  jp nz,drag_key
+  jp nz,ability_g
   ; C / fire 2 toggles crawl
   ld a,KEY_C
   call kbd_hit
@@ -131,12 +133,14 @@ cmd_can_attack:
   jr z,.guard
   cp ET_BARREL
   jr nz,.no
-  ld a,(ix+ent.idx)             ; only a bullet sets off a barrel
-  cp CMD_SNIPER
+  ld a,(ix+ent.role)            ; only a bullet sets off a barrel
+  cp ROLE_SNIPER
   jr nz,.no
 .guard:
-  ld a,(ix+ent.idx)
-  cp CMD_SNIPER
+  ld a,(ix+ent.role)
+  cp ROLE_SAPPER                ; the Sapper doesn't fight
+  jr z,.no
+  cp ROLE_SNIPER
   jr nz,.yes
   ld a,(ammo)
   or a
@@ -150,8 +154,8 @@ cmd_can_attack:
 
 ; IX = commando -> A = tile flags that stop it (the Marine swims)
 cmd_block_flags:
-  ld a,(ix+ent.idx)
-  cp CMD_MARINE
+  ld a,(ix+ent.role)
+  cp ROLE_MARINE
   ld a,TF_SOLID
   ret z
   ld a,TF_SOLID|TF_WATER
@@ -262,9 +266,12 @@ cmd_walk:
 
 ; IX = commando, IY = target -> carry if close enough to strike
 cmd_in_reach:
-  ld a,(ix+ent.idx)
-  cp CMD_BERET
+  ld a,(ix+ent.role)
+  cp ROLE_SPY                   ; the syringe: as close as the knife
+  jr z,.melee
+  cp ROLE_BERET
   jr nz,.ranged
+.melee:
   ld a,(iy+ent.x)
   sub (ix+ent.x)
   add a,KNIFE_RANGE_X
@@ -277,7 +284,7 @@ cmd_in_reach:
   ret
 .ranged:
   ld e,HARPOON_RANGE
-  cp CMD_MARINE
+  cp ROLE_MARINE
   jr z,.r
   ld e,RIFLE_RANGE
 .r:
@@ -322,8 +329,8 @@ cmd_attack:
   push ix
   pop iy
   pop ix
-  ld a,(ix+ent.idx)
-  cp CMD_SNIPER
+  ld a,(ix+ent.role)
+  cp ROLE_SNIPER
   jr z,.rifle
   ld a,SFX_KNIFE                ; knife and harpoon are silent
   call sfx_play
@@ -366,15 +373,21 @@ cmd_attack:
 ; IX = commando: board the truck when standing in its footprint.
 ; Returns NZ if boarded.
 cmd_board:
+  ld hl,mis+MIS_TRUCK_X0
   ld a,(ix+ent.x)
-  cp M01_TRUCK_X0
+  cp (hl)
   jr c,.no
-  cp M01_TRUCK_X1+1
+  inc hl
+  dec a
+  cp (hl)                       ; x - 1 < x1  <=>  x <= x1
   jr nc,.no
+  inc hl
   ld a,(ix+ent.y)
-  cp M01_TRUCK_Y0
+  cp (hl)
   jr c,.no
-  cp M01_TRUCK_Y1+1
+  inc hl
+  dec a
+  cp (hl)
   jr nc,.no
   set EF_BOARDED,(ix+ent.flags)
   ld (ix+ent.state),ST_IDLE

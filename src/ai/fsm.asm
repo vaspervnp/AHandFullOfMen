@@ -24,10 +24,12 @@ ai_update:
   jp z,ai_do_alarm
   cp AI_INVESTIGATE
   jr z,ai_do_investigate
+  cp AI_DISTRACTED
+  jp z,ai_do_distracted
   ; --- AI_PATROL
   call guard_look
   ret nc
-  ; spotted something
+ai_spotted:                     ; A = what was seen
   ld (ix+ent.ai_seen),a
   cp CMD_COUNT
   jr nc,.corpse                 ; a dead comrade: raise the alarm at once
@@ -186,6 +188,9 @@ guard_look:
 
 ; IX = guard, IY = commando. Carry = seen (zone rules + LOS).
 guard_sees_iy:
+  or a
+  bit EF_DISGUISE,(iy+ent.flags)
+  ret nz                        ; the Spy in uniform: one of us (NC)
   ld b,(iy+ent.x)               ; underwater (the Marine) = invisible
   ld c,(iy+ent.y)
   call map_flags

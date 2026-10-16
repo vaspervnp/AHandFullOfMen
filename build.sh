@@ -18,9 +18,12 @@ rm -rf build && mkdir -p build
 #    tools/render_assets.sh from the Blender scenes and Aseprite documents)
 python3 tools/png2cpc.py assets/sprites build/sprites.asm
 python3 tools/png2cpc.py assets/sprites2 build/sprites2.asm
+python3 tools/png2cpc.py assets/sprites3 build/sprites3.asm
 python3 tools/png2cpc.py assets/tiles build/tiles.asm
 python3 tools/png2cpc.py assets/ui build/ui.asm
+python3 tools/png2cpc.py assets/ui build/bank7_gfx.asm manifest_bank7.json
 python3 tools/map2asm.py assets/maps/mission01.txt map_mission01 build/mission01_map.asm
+python3 tools/map2asm.py assets/maps/mission02.txt map_mission02 build/mission02_map.asm
 python3 tools/music2asm.py build/music.asm assets/music/title.txt assets/music/win.txt assets/music/lose.txt
 
 cd build
@@ -42,6 +45,8 @@ cp code.bin CODE.BIN
 cp data.bin DATA.BIN
 cp sprites.bin SPRITES.BIN
 cp sprites2.bin SPRITES2.BIN
+cp bank7.bin BANK7.BIN
+cp sprites3.bin SPRITES3.BIN
 cp ../assets/disc/DISC.BAS DISC.BAS
 iDSK handful_of_men.dsk -i DISC.BAS -t 0 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i SPLASH.SCR -t 1 -e C000 -c C000 >/dev/null 2>&1
@@ -50,6 +55,8 @@ iDSK handful_of_men.dsk -i CODE.BIN -t 1 -e 0040 -c 0040 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i DATA.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i SPRITES.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
 iDSK handful_of_men.dsk -i SPRITES2.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
+iDSK handful_of_men.dsk -i BANK7.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
+iDSK handful_of_men.dsk -i SPRITES3.BIN -t 1 -e 4000 -c 4000 >/dev/null 2>&1
 echo "build: handful_of_men.sna + handful_of_men.dsk ready in build/"
 
 # 6. Headless regression tests

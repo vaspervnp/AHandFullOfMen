@@ -24,15 +24,17 @@ On a real CPC or in an emulator: insert `build/handful_of_men.dsk` and type
 | Key | Action |
 | --- | --- |
 | Cursor keys / QAOP / joystick | move the crosshair (push against an edge to scroll) |
-| Space / Copy / Fire | select a commando, order a move, or attack what is under the cursor (knife, harpoon, rifle) |
+| Space / Copy / Fire | select a commando, order a move, or attack what is under the cursor (knife, harpoon, rifle, syringe) |
 | Return / Fire 2, C | toggle crawling |
-| 1, 2, 3 | select Green Beret, Marine, Sniper |
-| D | Green Beret: drop the radio decoy, press again to make it ping |
-| G | Green Beret: grab / drop the barrel or body within reach |
+| 1, 2, 3 | select a commando (the HUD portraits, left to right) |
+| D | first ability of the selected commando (see the tables below) |
+| G | second ability of the selected commando |
 | V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
-The title menu lists these shortcuts too. Space or Fire starts the mission.
+The title menu lists these shortcuts too. Keys 1 and 2 on the menu pick the
+mission, and Space or Fire starts it. Accomplishing a mission moves the
+menu on to the next one.
 
 ## Mission 1: Baptism of Fire
 
@@ -47,6 +49,23 @@ Finishing without ever raising the alarm counts as a bonus objective.
 | Tiny, Green Beret | knife (silent, melee), radio decoy, drags barrels and bodies |
 | Fins, Marine | swims, and can't be seen underwater; harpoon (silent, short range) |
 | Duke, Sniper | rifle: long range, needs a clear line of sight, 5 rounds, loud |
+
+Green Beret keys: D drops the radio decoy (press again to make it ping),
+G grabs or drops the barrel or body within reach.
+
+## Mission 2: Inferno
+
+A fuel depot on a Norwegian fjord, inside a fenced compound with a single
+gate on the south road. Blow the depot up with the Sapper's time bomb, then
+get every survivor to the truck at the north-west end of the road. The
+same 60-second alarm rule applies, and the bomb always raises the alarm,
+so plant it, then run.
+
+| Commando | Abilities |
+| --- | --- |
+| Tiny, Green Beret | as in Mission 1 |
+| Inferno, Sapper | D: lays a bear trap at his feet (2 of them); a sentry walking onto it dies silently. G: plants the time bomb (1): 10 seconds, then a blast three tiles across that destroys the depot if it is close enough. He doesn't fight |
+| Spooky, Spy | D: puts on or takes off a German uniform; in it, sentries take him for one of their own. G: in uniform, talks to the sentry next to him, who turns to face him and stands there for as long as he stays close. Attack: syringe (silent, melee) |
 
 ## Stealth rules
 
@@ -107,10 +126,11 @@ src/defs.asm             constants, entity struct, key codes
 src/crtc/                video init, palette, VSYNC interrupt
 src/render/              tile engine, masked blitter, renderer, HUD
 src/input/               keyboard matrix, joystick/QAOP, cursor
-src/entities/            entity helpers, commandos, guards, barrels/explosions/dragging
+src/entities/            entity helpers, commandos, guards, barrels/explosions/dragging,
+                         role abilities (Sapper, Spy)
 src/ai/                  vision geometry + LOS, guard state machine, noise, pathfinding
 src/audio/               AY-3-8912 access, sound effects
-src/missions/            mission spawn and patrol data
+src/missions/            mission table + per-mission spawn and patrol data
 src/menu.asm             title menu (banner + keyboard shortcuts)
 src/boot/loader.asm      disk loader (AMSDOS, pages sprites into bank 4)
 assets/                  .blend + .aseprite sources, renders, PNG sheets (+ manifests),
@@ -126,7 +146,7 @@ tests/                   scripted-input scenarios + assertions
 | --- | --- |
 | `&0040-&3EFF` | code, tables, variables |
 | `&3F00-&3FFF` | stack (measured depth is about 30 bytes; tests check a canary) |
-| `&4000-&7FFF` | tiles, font, title art, mission data, live map. Sprite banks 4 (Green Beret, guard, effects) and 5 (Marine, Sniper) are paged in here while blitting |
+| `&4000-&7FFF` | tiles, font, portraits, texts, mission spawn lists, live map, path grids, render caches. Paged over by bank 4 (Green Beret, guard, cursor, effects), 5 (Marine, Sniper, menu music) or 6 (Sapper, Spy) while blitting, and by bank 7 (title banner, mission maps) when the menu or a mission loads |
 | `&8000-&BFFF` | screen buffer B |
 | `&C000-&FFFF` | screen buffer A |
 
