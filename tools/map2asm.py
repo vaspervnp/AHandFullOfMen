@@ -20,10 +20,10 @@ LEGEND = {
     "~": "water", "n": "bank_n", "u": "bank_s", "R": "rock", "-": "fence_h",
     "|": "fence_v", "W": "wall", "r": "roof", "e": "roof_edge", "D": "door",
     "b": "bridge", "s": "sandbag", "t": "tracks", "x": "rubble", "G": "gate",
-    "#": "scorch",
+    "#": "scorch", "[": "rail_l", "]": "rail_r",
 }
 STAMPS = {"P": ("pine", 2, 3), "X": ("tower", 2, 4), "K": ("truck", 3, 2), "F": ("depot", 3, 2),
-          "U": ("uboat", 16, 6)}
+          "U": ("uboat", 16, 6), "Y": ("rbridge", 4, 3)}
 
 
 def main():

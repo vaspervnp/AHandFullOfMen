@@ -271,6 +271,36 @@ def check_t36_m3_escape(r):
     assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
 
 
+def check_t37_m4_boot(r):
+    assert r.byte("cur_mission") == 3
+    assert [r.ent(i, "role") for i in range(3)] == [0, ROLE_SAPPER, 2], "wrong squad"
+    guards = sum(1 for i in range(16) if r.ent(i, "type") == 2)
+    assert guards == 7, f"{guards} sentries"
+    assert r.byte("alarm") == 0, "spotted at the start"
+
+
+def check_t38_m4_bomb(r):
+    assert r.byte("target_down") == 1, "the bridge is still standing"
+    assert r.byte("map_buf", 17 * 40 + 21) == 5, "bridge tiles not turned to water"
+    assert r.byte("alarm") == 1
+    assert r.byte("bombs") == 0
+
+
+def check_t39_m4_route_ice(r):
+    ok, pos = near(r, 1, 30, 95)
+    assert ok, f"Sapper at {pos}, never crossed the ice to the camp (30,95)"
+
+
+def check_t40_m4_route_truck(r):
+    ok, pos = near(r, 0, 146, 31)
+    assert ok, f"Green Beret at {pos}, never reached the truck (146,31)"
+
+
+def check_t41_m4_escape(r):
+    assert r.ent(2, "flags") & EF_BOARDED, "the Sniper did not board the truck"
+    assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

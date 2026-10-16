@@ -151,6 +151,7 @@ KEY_ESC         equ &82
 KEY_Q           equ &83
 KEY_A           equ &85
 KEY_3           equ &71
+KEY_4           equ &70
 KEY_JUP         equ &90
 KEY_JDOWN       equ &91
 KEY_JLEFT       equ &92

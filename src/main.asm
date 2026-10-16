@@ -330,7 +330,7 @@ fuzz_rand:
 
 fuzz_keys:
   db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_V,KEY_RETURN
-  db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_V,KEY_ESC
+  db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_4,KEY_ESC
 fuzz_state: dw FUZZ_SEED*2+1           ; odd, distinct per seed
 fuzz_count: dw FUZZ_TICKS
 fuzz_hold:  db 1
@@ -549,6 +549,7 @@ data_start:
   include "missions/mission01.asm"
   include "missions/mission02.asm"
   include "missions/mission03.asm"
+  include "missions/mission04.asm"
 map_buf:        defs MAP_W*MAP_H
 path_table:     defs PATH_SLOTS*PATH_SLOT_SIZE
 path_dist:      defs PATH_W*PATH_H
@@ -618,6 +619,7 @@ bank7_start:
   include "mission01_map.asm"   ; generated: build/mission01_map.asm
   include "mission02_map.asm"   ; generated: build/mission02_map.asm
   include "mission03_map.asm"   ; generated: build/mission03_map.asm
+  include "mission04_map.asm"   ; generated: build/mission04_map.asm
 bank7_end:
   assert bank7_end<=&8000
 

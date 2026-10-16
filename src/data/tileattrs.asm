@@ -156,3 +156,17 @@ tile_attrs:
   db TF_SOLID|TF_OPAQUE         ; 142 uboat93
   db TF_SOLID|TF_OPAQUE         ; 143 uboat94
   db TF_SOLID|TF_OPAQUE         ; 144 uboat95
+  db TF_SOLID                  ; 145 rbridge0 (4x3 rail bridge: girders solid, deck walkable)
+  db 0                         ; 146 rbridge1
+  db 0                         ; 147 rbridge2
+  db TF_SOLID                  ; 148 rbridge3
+  db TF_SOLID                  ; 149 rbridge4
+  db 0                         ; 150 rbridge5
+  db 0                         ; 151 rbridge6
+  db TF_SOLID                  ; 152 rbridge7
+  db TF_SOLID                  ; 153 rbridge8
+  db 0                         ; 154 rbridge9
+  db 0                         ; 155 rbridge10
+  db TF_SOLID                  ; 156 rbridge11
+  db 0                         ; 157 rail_l
+  db 0                         ; 158 rail_r

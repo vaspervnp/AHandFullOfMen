@@ -33,7 +33,7 @@ expansion. On a 64K machine the loader says so and returns to BASIC.
 | V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
-The title menu lists these shortcuts too. Keys 1 and 2 on the menu pick the
+The title menu lists these shortcuts too. Keys 1 to 4 on the menu pick the
 mission. Space or Fire opens its briefing (objectives, and what each
 commando's D and G do), and pressing it again starts the mission.
 Accomplishing a mission moves the menu on to the next one.
@@ -76,6 +76,14 @@ beside it. The dock yard is fenced, with one gate on the east road, but
 a canal runs down the west edge: the Marine's way in. Shoot the barrels
 next to the U-boat to sink her, then get the survivors to the truck south
 of the gate. Squad: Marine, Sniper, Spy (abilities as above).
+
+## Mission 4: A Bridge Too Far
+
+A railway crosses a river on a steel bridge, with sandbagged posts at
+both ends. Blow the bridge with the Sapper's time bomb, then get the
+survivors to the truck in the camp on the north bank. Once the span is
+down, the frozen ford in the west is the only way across. Squad: Green
+Beret, Sapper, Sniper (abilities as above).
 
 ## Stealth rules
 

@@ -41,7 +41,7 @@ CHAR_RES = (96, 64)         # 12x16 Mode 0 sprite * (8, 4)
 TOWER_RES = (128, 128)      # 16x32 Mode 0 stamp * (8, 4)
 UNIT = 2.8 / 24             # Blender units per visual unit (character framing)
 SUBJECTS = ["beret", "marine", "sniper", "sapper", "spy", "guard", "tower", "pine", "rock",
-            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "portraits", "banner"]
+            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "railbridge", "portraits", "banner"]
 OPERATIVES = ("beret", "marine", "sniper", "sapper", "spy")      # portrait order = ROLE_*
 
 LOOKS = {
@@ -432,6 +432,27 @@ def build_uboat(sc):                              # 16x6 tiles: 128x48 Mode 0 px
     frame_camera(sc, 128, 48)
 
 
+def build_railbridge(sc):                             # 4x3 tiles: 32x24 Mode 0 px, spans north
+    deck_d, half = 3.9, 3.3                          # the deck runs from y=0 (south bank) north
+    box("deck", (2 * half, deck_d, 0.12), (0, deck_d / 2, 0.2), "red")
+    for i in range(9):                               # sleepers under the rails
+        box("sleeper", (2.2, 0.2, 0.05), (0, 0.25 + i * 0.43, 0.285), "black")
+    for x in (-0.7, 0.7):
+        box("rail", (0.08, deck_d, 0.06), (x, deck_d / 2, 0.33), "grey")
+    for x in (-half, half):                          # steel girders with cross bracing
+        box("girder", (0.4, deck_d, 0.14), (x, deck_d / 2, 0.62), "grey")
+        box("chord", (0.4, deck_d, 0.14), (x, deck_d / 2, 0.24), "grey")
+        for i in range(5):
+            y = 0.1 + i * (deck_d - 0.2) / 4
+            box("post", (0.3, 0.16, 0.42), (x, y, 0.43), "grey")
+            if i < 4:
+                ob = box("brace", (0.14, 1.1, 0.1), (x, y + (deck_d - 0.2) / 8, 0.43), "black")
+                ob.rotation_euler = (math.radians(22 if i % 2 else -22), 0, 0)
+    for y in (0.9, deck_d - 0.9):                    # stone piers in the river
+        box("pier", (2 * half + 0.3, 0.5, 0.25), (0, y, 0.02), "white")
+    frame_camera(sc, 32, 24)
+
+
 def build_trap(sc):                               # bear trap, in a 12x16 sprite cell
     cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=10)
     for y in (-0.36, 0.36):                          # open jaws, teeth up
@@ -549,7 +570,7 @@ def render_prop(subject, out_dir, blend_dir):
     builders = {"tower": build_tower, "pine": build_pine, "rock": build_rock,
                 "barrel": build_barrel, "truck": build_truck, "banner": build_banner,
                 "depot": build_depot, "trap": build_trap, "bomb": build_bomb,
-                "uboat": build_uboat}
+                "uboat": build_uboat, "railbridge": build_railbridge}
     sc, _ = open_or_build(subject, blend_dir, builders[subject])
     render_still(sc, out_dir, subject, subject)
 
