@@ -14,6 +14,9 @@ for src in tests/t[0-9][0-9]_*.asm; do
   (cd build && rasm -amper -v2 -I../src -I. "../$src" \
       -oi "tests/$name.sna" -os "tests/$name.sym" -s -sl 2>&1 \
       | sed 's/\x1b\[[0-9;]*m//g' > "tests/$name.log") || true
+  (cd build && rasm -amper -v2 -I../src -I. -DREF_RENDER=1 "../$src" \
+      -oi "tests/${name}_ref.sna" -os "tests/${name}_ref.sym" -s -sl 2>&1 \
+      | sed 's/\x1b\[[0-9;]*m//g' >> "tests/$name.log") || true
   if grep -qiE "error|warning" "build/tests/$name.log"; then
     echo "FAIL $name (assembly)"; grep -iE "error|warning" "build/tests/$name.log"; fail=1; continue
   fi

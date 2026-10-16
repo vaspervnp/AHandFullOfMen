@@ -113,10 +113,13 @@ mission_load:
   xor a
   ld (tick),a
   ld (cone_count),a
+  ld (cone_fresh),a
+  ld (cone_pending),a
   dec a                         ; &FF: no cone shown or pinned
   ld (cone_pinned),a
   ld (cone_guard),a
   ld (cone_key),a
+  ld (pf_job),a                 ; no search running
   ld hl,cone_tiles              ; full redraw follows: forget old cone tiles
   ld b,DIRTY_SIZE
   xor a
@@ -135,11 +138,17 @@ mission_load:
 update_cursor_frame:
   call cursor_world
   call ent_at
-  ld a,0
-  jr nc,.set
+  jr c,.found
+  ld a,&FF
+.found:
+  ld (cursor_ent),a             ; reused by the cone this tick
   cp CMD_COUNT
   ld a,0
-  jr c,.set
+  jr c,.set                     ; a commando
+  ld a,(cursor_ent)
+  inc a
+  ld a,0
+  jr z,.set                     ; nothing there
   ld a,(ix+ent.type)
   ld (click_type),a
   call sel_ent

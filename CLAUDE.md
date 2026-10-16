@@ -4,9 +4,15 @@
   quick loop: `./build.sh --no-test && tests/run_tests.sh --no-cap32`.
 - Debug a scenario: `cd build && python3 ../tools/cpcsim.py tests/t01_boot.sna
   --sym tests/t01_boot.sym --peek tick:2 --trace 40 --screen out.png`.
-- Profile: `cpcsim.py ... --profile 30` samples the PC after frame 30 and
-  prints a per-routine breakdown. Frames per game tick (target 2 = 25 Hz):
-  `--peek tick:1`, then compare against `frames=`.
+- Frame budget: `tests/frames.py` (cpcsim at `--slow 1.25`, which matches
+  Caprice32 within a few ticks) or `tests/frames.py --cap32` (exact). Target:
+  2 frames per tick everywhere.
+- Profile: `tools/profile_calls.py t21_cone_patrol --from 60 --to 120`
+  gives inclusive time per routine. `cpcsim.py ... --profile 30 --slow 1.25`
+  gives flat PC samples.
+- The z80 package clamps `ticks_to_stop` at 0, so stepping one instruction
+  at a time counts every instruction as 1 T-state. Only chunked runs, with
+  the calibrated `--slow`, give real timing.
 - Test scripts are `db ticks, joy_bits, key` (key = matrix code or &FF), with
   a `SETUP` macro (required, may be empty) run after mission_load to stage
   entities.
@@ -28,8 +34,9 @@
   recognised by 4.6.
 - `/usr/share/cpcemu` is Marco Vieth's CPCEMU 2.5: interactive only, with no
   headless or dump options.
-- `tools/cpcsim.py` counts raw Z80 T-states (no CPC 4T rounding), so it's
-  optimistic on timing.
+- `tools/cpcsim.py` counts raw Z80 T-states (no CPC 4T rounding). Pass
+  `--slow 1.25` (tests/frames.py does this by default) to approximate the
+  CPC's wait states.
 
 ## Art pipeline
 - Art sources: `assets/blender/*.blend` and `assets/aseprite/{terrain,font,cursor}.aseprite`.
@@ -46,12 +53,19 @@
   instead.
 
 ## Game code rules
-- Any change to `map_buf` must call `path_map_changed`, which rebuilds the
-  pathfinder's walk grids (mission load and the tower falling already do).
-- Frame budget: 2 frames per game tick (25 Hz). Measure frames per tick
-  from `tick` changes in cpcsim. Known spikes: the first long detour
-  search costs ~4 extra frames; the compound scene during an alarm runs
-  at ~3 frames per tick.
+- Any change to `map_buf` must call `map_rect_changed` (a few tiles: walk
+  grids, dirty tiles, cone recast) or `path_map_changed` plus a full
+  redraw (mission load).
+- Renderer: `render_frame` diffs draw items against a per-buffer cache.
+  Anything drawn into the play area must go through it (draw items or
+  tiles marked dirty), or the `REF_RENDER` comparison in tests/check.py
+  fails.
+- Path searches are background jobs run from `pf_idle` (inside
+  `wait_vsync` / `wait_frame`). `path_to` returns at once with a pending
+  one-point path, so never assume a route exists the tick it's requested.
+- Stack: 256 bytes at `&3F00`. Measured depth is about 30; TEST builds fill
+  a canary at `&3F00-&3F7F`.
+- rasm `-amper`: `&&` is not logical AND, so split asserts instead.
 
 ## Hardware notes
 - Mode 0 byte layout: the left pixel's bits 0..3 sit in bits 7,3,5,1. The

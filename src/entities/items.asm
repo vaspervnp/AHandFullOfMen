@@ -133,9 +133,10 @@ destroy_tower:
   ld de,MAP_W-1
   add hl,de
   djnz .row
-  ld a,3
-  ld (view_dirty),a
-  jp path_map_changed
+  call hud_mark_dirty           ; new objective
+  ld bc,M01_TOWER_COL*256+M01_TOWER_ROW
+  ld de,2*256+4
+  jp map_rect_changed
 
 ; Every guard drops what it is doing and joins the fight.
 alarm_all:

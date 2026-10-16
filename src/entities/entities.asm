@@ -2,32 +2,24 @@
 ; Entity table helpers and shared movement
 ; ===========================================================================
 
-; A = entity index -> IX = entity (preserves all other registers + flags)
+; A = entity index -> IX = entity (preserves all other registers + flags).
+; ent_table is page aligned: IX = ent_table + A*32.
 ent_ptr:
-  push hl
   push af
-  add a,a
-  add a,ent_addr and &FF        ; table never crosses a page (asserted)
-  ld l,a
-  ld h,ent_addr>>8
-  ld a,(hl)
-  inc l
-  ld h,(hl)
-  ld l,a
-  push hl
-  pop ix
+  rrca                          ; (A and 7) << 5 | A >> 3
+  rrca
+  rrca
+  ld ixl,a
+  and 1
+  add a,ent_table>>8
+  ld ixh,a
+  ld a,ixl
+  and &E0
+  ld ixl,a
   pop af
-  pop hl
   ret
-
-  align 32                      ; 32-byte table: never crosses a page
-ent_addr:
-i=0
-  repeat MAX_ENTS
-  dw ent_table+i*ENT_SIZE
-i=i+1
-  rend
-  assert (ent_addr and &FF00)==((ent_addr+MAX_ENTS*2-1) and &FF00)
+  assert ENT_SIZE==32
+  assert MAX_ENTS<=16
 
 ; IX = selected commando
 sel_ent:
@@ -37,19 +29,11 @@ sel_ent:
 ; Find a live entity whose sprite box contains world (B, C).
 ; -> carry set if found, A = index, IX = entity
 ent_at:
+  push hl
   ld ix,ent_table
-  xor a
-  ld (ent_scan),a
+  ld de,ENT_SIZE
+  ld h,MAX_ENTS
 .lp:
-  ld a,(ix+ent.type)
-  or a
-  jr z,.next
-  ld a,(ix+ent.flags)
-  and (1<<EF_DEAD)|(1<<EF_BOARDED)
-  jr nz,.next
-  ld a,(ix+ent.type)
-  cp ET_FX
-  jr z,.next
   ld a,b                        ; x in [ex-3, ex+2]
   sub (ix+ent.x)
   add a,3
@@ -59,17 +43,24 @@ ent_at:
   sub c
   cp 16
   jr nc,.next
-  ld a,(ent_scan)
+  ld a,(ix+ent.type)
+  or a
+  jr z,.next
+  cp ET_FX
+  jr z,.next
+  ld a,(ix+ent.flags)
+  and (1<<EF_DEAD)|(1<<EF_BOARDED)
+  jr nz,.next
+  ld a,MAX_ENTS
+  sub h
+  pop hl
   scf
   ret
 .next:
-  ld de,ENT_SIZE
   add ix,de
-  ld a,(ent_scan)
-  inc a
-  ld (ent_scan),a
-  cp MAX_ENTS
+  dec h
   jr nz,.lp
+  pop hl
   or a
   ret
 

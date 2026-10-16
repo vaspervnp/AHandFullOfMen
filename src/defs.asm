@@ -13,6 +13,7 @@ CRTC_DATA       equ &BD
 
 GA_MODE0_NOROM  equ &8C         ; mode 0, upper+lower ROM disabled
 RAM_BASE64      equ &C0         ; default 64K bank configuration
+RAM_SPRITES     equ &C4         ; bank 4 at &4000 (beret, guard, cursor, fx)
 
 ; --- Screen layout ----------------------------------------------------------
 SCREEN          equ &C000

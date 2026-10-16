@@ -6,7 +6,7 @@
 ; ===========================================================================
 
 sprites_on:
-  ld bc,&7FC4                   ; bank 4 -> &4000
+  ld bc,&7F00+RAM_SPRITES       ; bank 4 -> &4000
   out (c),c
   ret
 
@@ -15,11 +15,12 @@ sprites_off:
   out (c),c
   ret
 
-; Draw a sprite clipped to the tactical area of the back buffer.
+; Clip a sprite to the tactical area (no drawing).
 ; in:  HL = frame data, B = screen x byte (signed), C = screen y (signed)
 ;      D = width bytes, E = height lines
-; out: B,C,D,E = clipped rectangle actually drawn; D = 0 if nothing visible
-blit_clipped:
+; out: B,C,D,E = clipped rectangle, HL = first source byte drawn,
+;      A = source bytes to skip after each row; D = 0 if nothing visible
+clip_rect:
   ld (bl_src),hl
   ld a,d
   ld (bl_fullw),a
@@ -95,33 +96,7 @@ blit_clipped:
   ld a,(bl_fullw)
   sub d
   add a,a
-  ld (blit_core.stride+1),a     ; source bytes to skip after each row
-  push bc
-  push de
-  ; DE = back buffer address of (B, C)
-  ld l,c
-  ld h,0
-  add hl,hl
-  ld de,scr_line
-  add hl,de
-  ld e,(hl)
-  inc hl
-  ld a,(hl)
-  ld hl,back_hi
-  add a,(hl)
-  ld d,a
-  ld a,e
-  add a,b
-  ld e,a
-  jr nc,.nc
-  inc d
-.nc:
-  pop bc                        ; B = width, C = height
-  push bc
   ld hl,(bl_src)
-  call blit_core
-  pop de
-  pop bc
   ret
 .invis:
   ld d,0
@@ -142,7 +117,7 @@ blit_core:
   inc de
   djnz .px
 .stride:
-  ld bc,0                       ; low byte patched by blit_clipped
+  ld bc,0                       ; low byte patched by draw_items
   add hl,bc
   pop de
   ld a,d                        ; next scanline

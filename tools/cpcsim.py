@@ -75,6 +75,7 @@ class CPC:
         self.profile = {}
         self.trace = None           # deque of recent PCs when tracing
         self.samples = None         # PC samples (one per chunk) when profiling
+        self.slow = 1.0             # T-state multiplier (CPC wait states)
         m.set_output_callback(self.out)
         m.set_input_callback(self.inp)
         m.set_breakpoint(0)
@@ -172,7 +173,8 @@ class CPC:
                 self.trace.append(m.pc)
             m.ticks_to_stop = chunk
             events = m.run()
-            self.t += chunk - m.ticks_to_stop if m.ticks_to_stop else chunk
+            ran = chunk - m.ticks_to_stop if m.ticks_to_stop else chunk
+            self.t += ran if self.slow == 1.0 else int(ran * self.slow + 0.5)
             if events & m._BREAKPOINT_HIT:
                 if m.pc == 0:
                     self.stopped = True
@@ -226,10 +228,13 @@ def main():
     ap.add_argument("--peek", nargs="*", default=[])
     ap.add_argument("--profile", type=int, default=0, metavar="SKIP",
                     help="sample the PC after SKIP frames and print a per-routine profile")
+    ap.add_argument("--slow", type=float, default=1.0,
+                    help="T-state multiplier approximating CPC wait states (~1.25)")
     ap.add_argument("--trace", type=int, default=0,
                     help="print the last N program counters before stopping")
     a = ap.parse_args()
     cpc = CPC(a.sna)
+    cpc.slow = a.slow
     syms = load_syms(a.sym)
     if a.trace:
         import collections

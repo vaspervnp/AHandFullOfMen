@@ -32,6 +32,9 @@ joy_read:
   and &0F
   or d
   ld e,a
+  ld a,(kbd_any)
+  or a
+  jr z,.done                    ; no key held
   ld hl,joy_keys
   ld b,JOY_KEY_COUNT
 .k:
@@ -51,6 +54,7 @@ joy_read:
 .next:
   inc hl
   djnz .k
+.done:
   ld a,e
   ld (joy_state),a
   ret

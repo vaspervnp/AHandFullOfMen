@@ -82,12 +82,15 @@ int_handler:
   ei
   ret
 
-; Wait for the next VSYNC.
+; Wait for the next VSYNC. Waiting time goes to background path searches
+; (pf_idle halts when there is none).
 wait_vsync:
-  ld hl,vsync_count
-  ld a,(hl)
+  ld a,(vsync_count)
+  ld (wait_v),a
 .w:
-  halt
+  call pf_idle
+  ld a,(wait_v)
+  ld hl,vsync_count
   cp (hl)
   jr z,.w
   ret
@@ -96,15 +99,15 @@ wait_vsync:
 ; (game runs at 25 Hz). Returns A = frames actually elapsed.
 FRAME_STEP equ 2
 wait_frame:
-  ld hl,vsync_count
 .w:
+  ld hl,vsync_count
   ld a,(last_vsync)
   ld b,a
   ld a,(hl)
   sub b
   cp FRAME_STEP
   jr nc,.go
-  halt
+  call pf_idle
   jr .w
 .go:
   ld c,a

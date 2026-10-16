@@ -3,6 +3,10 @@
 
 Usage: check.py <test name>   (expects build/tests/<name>.sna/.sym)
 Each scenario's script ends with a jump to &0000; we then inspect RAM.
+If build/tests/<name>_ref.sna exists (the same scenario assembled with
+REF_RENDER=1, which redraws the whole view every frame), the screen shown
+at the end must match it byte for byte: the dirty-tile renderer may skip
+work, never pixels.
 """
 import os
 import sys
@@ -18,7 +22,7 @@ EF_CRAWL, EF_DEAD, EF_BOARDED = 1, 4, 16
 
 
 class Run:
-    def __init__(self, name, max_frames=3000):
+    def __init__(self, name, max_frames=3000, png=True):
         base = os.path.join(ROOT, "build", "tests", name)
         self.cpc = cpcsim.CPC(base + ".sna")
         self.syms = cpcsim.load_syms(base + ".sym")
@@ -26,7 +30,14 @@ class Run:
             self.cpc.run_frame()
             if self.cpc.stopped:
                 break
-        self.cpc.screen_png(base + "_sim.png")
+        if png:
+            self.cpc.screen_png(base + "_sim.png")
+
+    def shown(self):
+        """Displayed screen, minus the frame_hist bytes test_end puts on line 0."""
+        scr = self.cpc.base_ram(((self.cpc.crtc[12] >> 4) & 3) * 0x4000, 0x4000)
+        scr[0:10] = bytes(10)
+        return scr
 
     def byte(self, name, off=0):
         return self.cpc.base_ram(self.syms[name.lower()] + off)[0]
@@ -154,6 +165,12 @@ def check_t20_unreachable(r):
     assert r.ent(0, "state") == 0, "should have refused the order"
 
 
+def check_t21_cone_patrol(r):
+    assert r.byte("cone_pinned") == 7, f"cone_pinned={r.byte('cone_pinned')}"
+    assert r.byte("cone_count") > 20, f"cone has {r.byte('cone_count')} dots"
+    assert r.ent(7, "x") > 30, f"river guard at x={r.ent(7, 'x')}, should be patrolling east"
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 
@@ -163,12 +180,25 @@ def main():
     if not r.cpc.stopped:
         print(f"FAIL {name}: script never finished (crash or hang?) PC={r.cpc.m.pc:04X}")
         sys.exit(1)
+    canary = r.cpc.base_ram(0x3F00, 128)
+    if any(b != 0xA5 for b in canary):
+        print(f"FAIL {name}: the stack grew into the canary at &3F00 (STACK_RESERVE)")
+        sys.exit(1)
     check = CHECKS.get(name)
     if check:
         try:
             check(r)
         except AssertionError as e:
             print(f"FAIL {name}: {e}")
+            sys.exit(1)
+    if os.path.exists(os.path.join(ROOT, "build", "tests", name + "_ref.sna")):
+        ref = Run(name + "_ref", png=False)
+        a, b = r.shown(), ref.shown()
+        if a != b:
+            bad = [i for i in range(0x4000) if a[i] != b[i]]
+            lines = sorted({(i % 0x800) // 80 * 8 + i // 0x800 for i in bad if i % 0x800 < 2000})
+            print(f"FAIL {name}: screen differs from the full-redraw reference in {len(bad)} "
+                  f"bytes, lines {lines[:12]}{'...' if len(lines) > 12 else ''}")
             sys.exit(1)
 
 

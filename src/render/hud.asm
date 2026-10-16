@@ -10,6 +10,7 @@ PORTRAIT_W      equ 8
 PORTRAIT_H      equ 24
 TEXT_X          equ 34
 HUD_CACHE_ROW   equ 32          ; ink + up to 30 chars + 0
+HUD_CACHE_SIZE  equ HUD_CACHE_ROW*5+3   ; 5 text rows, 3 portrait keys
 
 hud_mark_dirty:
   ld a,3
@@ -190,9 +191,40 @@ num2:
   ld (num_buf+1),a
   ret
 
-; A = commando index (0..2)
+; A = commando index (0..2). Skipped when this buffer already shows the
+; same selection highlight and health (cached after the text rows).
 hud_portrait:
   ld (hp_idx),a
+  call ent_ptr
+  ld a,(ix+ent.hp)
+  bit EF_DEAD,(ix+ent.flags)
+  jr z,.live
+  xor a
+.live:
+  ld c,a                        ; key = health shown + &80 if selected
+  ld a,(sel_cmd)
+  ld hl,hp_idx
+  cp (hl)
+  jr nz,.key
+  set 7,c
+.key:
+  ld a,(back_hi)
+  cp &C0
+  ld hl,hud_cache_c0+HUD_CACHE_ROW*5
+  jr z,.buf
+  ld hl,hud_cache_80+HUD_CACHE_ROW*5
+.buf:
+  ld a,(hp_idx)
+  add a,l
+  ld l,a
+  adc a,h
+  sub l
+  ld h,a
+  ld a,(hl)
+  cp c
+  ret z
+  ld (hl),c
+  ld a,(hp_idx)
   ld b,a
   add a,a                       ; x = 2 + idx*10
   add a,a
@@ -436,39 +468,46 @@ text_ink:
   jr z,.w
   ret
 
-; HL = string, C = HUD row (19..23): print it at TEXT_X unless this buffer
-; already shows exactly that text in the current ink.
+; HL = string, C = HUD row (19..23): print it at TEXT_X. Only characters
+; that differ from what this buffer shows get drawn (the cache keeps the
+; whole line, including any tail left by a longer earlier string).
 hud_print:
   push hl
   call hud_cache_ptr            ; DE = cache entry (ink, text...)
   pop hl
   ld a,(de)
-  push hl
-  ld hl,text_cur_ink
+  ld b,a
+  ld a,(text_cur_ink)
+  cp b
+  jr nz,.full
+  inc de
+  ld b,TEXT_X
+.ch:
+  ld a,(hl)
+  or a
+  jr z,.end
+  ex de,hl
   cp (hl)
-  pop hl
-  jr nz,.diff
+  ex de,hl
+  jr z,.same
+  ld (de),a
   push hl
   push de
-  inc de
-.cmp:
-  ld a,(de)
-  cp (hl)
-  jr nz,.diff2
-  or a
-  jr z,.same
+  push bc
+  call print_char
+  pop bc
+  pop de
+  pop hl
+.same:
   inc hl
   inc de
-  jr .cmp
-.same:
-  pop de
-  pop hl
+  inc b
+  inc b
+  jr .ch
+.end:
+  ld (de),a
   ret
-.diff2:
-  pop de
-  pop hl
-.diff:
-  ld a,(text_cur_ink)
+.full:                          ; new ink: everything
   ld (de),a
   inc de
   push hl
@@ -515,7 +554,7 @@ hud_cache_clear:
   jr z,.b
   ld hl,hud_cache_80
 .b:
-  ld b,HUD_CACHE_ROW*5
+  ld b,HUD_CACHE_SIZE
 .lp:
   ld (hl),&FF
   inc hl
@@ -531,9 +570,18 @@ print_at:
   inc hl
   push hl
   push bc
+  call print_char
+  pop bc
+  pop hl
+  inc b
+  inc b
+  jr .ch
+
+; A = ASCII, B = x byte, C = character row (ink from text_ink)
+print_char:
+  push bc
   call glyph_index              ; trashes BC
   pop bc
-  push bc
   ld l,a                        ; glyph = font + index*8
   ld h,0
   add hl,hl
@@ -544,32 +592,27 @@ print_at:
   push hl
   call tile_screen_addr_x       ; DE = screen for (B bytes, row C)
   pop hl
-  ld b,8
-.line:
+  ld b,text_words>>8
+  repeat 8,line
   ld a,(hl)                     ; row nibble -> text_words entry
   inc hl
-  push hl
   add a,a
   add a,text_words and &FF      ; table is 32-byte aligned: no carry
-  ld l,a
-  ld h,text_words>>8
-  ld a,(hl)
+  ld c,a
+  ld a,(bc)
   ld (de),a
-  inc l
+  inc c
   inc e
-  ld a,(hl)
+  ld a,(bc)
   ld (de),a
   dec e
-  pop hl
+  if line<8
   ld a,d
   add a,8
   ld d,a
-  djnz .line
-  pop bc
-  pop hl
-  inc b
-  inc b
-  jr .ch
+  endif
+  rend
+  ret
 
 ; HL = string, C = character row: print centred
 print_center:

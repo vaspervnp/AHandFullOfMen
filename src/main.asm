@@ -20,6 +20,9 @@
   ifndef TEST
 TEST equ 0
   endif
+  ifndef REF_RENDER
+REF_RENDER equ 0                ; tests: full redraw every frame (reference)
+  endif
   ifndef TEST_MENU
 TEST_MENU equ 0                 ; test scenarios skip the menu unless set
   endif
@@ -39,6 +42,13 @@ start:
   ld (&0039),hl
   ld bc,&7F00+RAM_BASE64
   out (c),c
+  if TEST                       ; stack canary, checked by tests/check.py
+  ld hl,STACK_CANARY
+  ld de,STACK_CANARY+1
+  ld bc,STACK_CANARY_LEN-1
+  ld (hl),&A5
+  ldir
+  endif
   call video_init               ; mode 0, black palette, screens cleared
   call psg_init
   ei
@@ -68,6 +78,9 @@ mission_start:
 
 main_loop:
   call wait_frame
+  if TEST
+  call test_frames
+  endif
   call kbd_scan
   call joy_read
   if TEST
@@ -114,7 +127,7 @@ test_input:
   ld hl,(test_ptr)
   ld a,(hl)
   or a
-  jp z,0
+  jr z,test_done
   inc hl
   ld a,(hl)
   ld (joy_state),a
@@ -160,6 +173,58 @@ test_press:
 .clr:
   and (hl)
   ld (hl),a
+  ld a,&FF                      ; the summary flags missed this key
+  ld (kbd_new),a
+  ld (kbd_any),a
+  ret
+; A = frames since the previous tick: histogram for tests/frames.py
+; (frame_hist[n] = ticks that took n frames, n saturated at 7)
+test_frames:
+  ld c,a
+  ld a,(tick)
+  or a
+  ret z                         ; first tick includes the initial draw
+  ld a,c
+  cp 8
+  jr c,.in
+  ld a,7
+.in:
+  ld hl,frame_hist
+  add a,l
+  ld l,a
+  jr nc,.nc
+  inc h
+.nc:
+  inc (hl)
+  ret nz
+  dec (hl)                      ; saturate at 255
+  ret
+frame_hist: ds 8
+; Script over. A vision cone cast still in progress shows a mix of old and
+; new dots on tiles restored meanwhile (by design: one cone buffer), which
+; the full-redraw reference would draw differently, so let it finish.
+test_done:
+  ld a,(cone_pending)
+  or a
+  ret nz
+; End of script: copy a marker + frame_hist onto line 0 of both screens so
+; tests/frames.py can read it back from a Caprice32 screenshot, then stop.
+test_end:
+  ld de,&C000
+  call .put
+  ld de,&8000
+  call .put
+  jp 0
+.put:
+  ld a,&AA
+  ld (de),a
+  inc de
+  ld a,&55
+  ld (de),a
+  inc de
+  ld hl,frame_hist
+  ld bc,8
+  ldir
   ret
 test_ptr: dw test_script
 test_count: db 0
@@ -220,10 +285,13 @@ cursor_x:       db 0
 cursor_y:       db 0
 cur_hold:       db 0
 cursor_frame:   db 0
+cursor_ent:     db &FF
 joy_state:      db 0
 joy_prev:       db 0
 keymap:         defs 10,&FF
 keymap_prev:    defs 10,&FF
+kbd_new:        db 0
+kbd_any:        db 0
 sel_cmd:        db 0
 alarm:          db 0
 game_over:      db 0           ; 0 playing, 1 failed, 2 accomplished
@@ -242,7 +310,6 @@ deb_reason_ptr: dw 0
 page_prompt:    dw 0
 page_prompt_row: db 0
 click_target:   db 0
-ent_scan:       db 0
 step_block:     db 0
 look_idx:       db 0
 look_r:         db 0
@@ -259,14 +326,23 @@ los_dy:         dw 0
 bl_src:         dw 0
 bl_fullw:       db 0
 cur_dirty:      dw 0
+cur_cache:      dw 0
+full_redraw:    db 0
+item_count:     db 0
+item_wr:        dw 0
+cur_slot:       db 0
+cur_bank:       db 0
+ce_ptr:         dw 0
+render_serial:  db 0
+exp_changed:    db 0
 hp_idx:         db 0
 hp_x:           db 0
 hp_frame:       db 0
 hp_hp:          db 0
 text_pairs:     defs 4
 text_cur_ink:   db 0
-hud_cache_c0:   defs HUD_CACHE_ROW*5,&FF
-hud_cache_80:   defs HUD_CACHE_ROW*5,&FF
+hud_cache_c0:   defs HUD_CACHE_SIZE,&FF
+hud_cache_80:   defs HUD_CACHE_SIZE,&FF
   align 32
 text_words:     defs 32
 text_paper:     db PEN_HUD
@@ -276,17 +352,21 @@ cone_guard:     db CONE_NONE
 cone_pinned:    db CONE_NONE
 cone_key:       defs 6,&FF
 cone_step:      db 0
-cone_tiles:     defs DIRTY_SIZE
+cone_pen_s:     db 0
+cone_pen_l:     db 0
+cone_away:      db 0
+cone_fresh:     db 0            ; buffers (bits 1, 2) yet to plot a new cone
+cone_plot_all:  db 0
+cone_pending:   db 0            ; cone_buf holds a cast not shown yet
 cone_count:     db 0
 cone_ang:       db 0
+cone_ang_b:     db 0
 cone_cx:        db 0
 cone_cy:        db 0
 cone_wr:        dw 0
 cone_dx:        dw 0
 cone_dy:        dw 0
-cone_fx:        dw 0
-cone_fy:        dw 0
-cone_buf:       defs CONE_RAYS*CONE_STEPS*3
+cone_buf:       defs CONE_RAYS*CONE_STEPS*CONE_DOT
 noise_x:        db 0
 noise_y:        db 0
 noise_r:        db 0
@@ -304,16 +384,39 @@ pf_d:           db 0
 pf_col:         db 0
 pf_row:         db 0
 pf_lastdir:     db 0
+pf_job:         db &FF          ; owner of the background search, &FF none
+pf_job_gx:      db 0            ; pf_job_gx, gy, mask: keep together
+pf_job_gy:      db 0
+pf_job_mask:    db 0
+pf_job_phase:   db 0
+pf_fill_src:    dw 0
+pf_fill_dst:    dw 0
+pf_fill_left:   dw 0
+pf_pops:        db 0
+pf_wc_row:      db 0
+wait_v:         db 0
 draw_count:     db 0
 sort_key:       db 0
+sort_idx:       db 0
+  align 64                      ; sort_entities: res/set 4,l and inc l
 draw_keys:      defs MAX_ENTS
-draw_list:      defs MAX_ENTS       ; must follow draw_keys
+draw_list:      db 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+key_by_idx:     defs MAX_ENTS
 ent_route:      defs MAX_ENTS*2
-dirty_c0:       defs DIRTY_SIZE
-dirty_80:       defs DIRTY_SIZE
+item_buf:       defs NSLOTS*IT_SIZE
+  align 64                      ; mark_rec steps through rows with inc l
+dirty_c0:       defs 64
+dirty_80:       defs 64
+cone_tiles:     defs 64             ; same layout: tiles under cone dots
+touch_map:      defs 64             ; same layout: this frame's touched tiles
+cone_tiles_new: defs 64             ; same layout: the cast waiting to be shown
+  align 256                     ; ent_ptr builds IX from the index
 ent_table:      defs MAX_ENTS*ENT_SIZE
 code_end:
-  assert code_end<&3C00         ; leave 1K for the stack
+STACK_RESERVE   equ 256         ; measured depth is ~30 bytes
+STACK_CANARY    equ &4000-STACK_RESERVE
+STACK_CANARY_LEN equ 128        ; must stay untouched: the stack's lower half
+  assert code_end<=STACK_CANARY
 
 ; ---------------------------------------------------------------------------
 ; Base RAM &4000: graphics and mission data
@@ -330,6 +433,8 @@ pf_cache_land:  defs PATH_W*PATH_H
 pf_cache_swim:  defs PATH_W*PATH_H
   align 256                     ; pf_wrap detects the end by its page
 path_queue:     defs PATH_QUEUE_LEN*2
+cache_c0:       defs NSLOTS*IT_SIZE     ; draw items shown in each buffer
+cache_80:       defs NSLOTS*IT_SIZE
 data_end:
   assert data_end<=&8000
 

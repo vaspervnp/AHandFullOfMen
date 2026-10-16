@@ -118,53 +118,6 @@ draw_view:
 DIRTY_ROW       equ 3
 DIRTY_SIZE      equ DIRTY_ROW*VIEW_TH
 
-; Mark the tiles under a screen rectangle (clipped to the view).
-; B = x byte, C = y line, D = width bytes, E = height lines
-mark_rect:
-  ld a,b
-  add a,d
-  dec a
-  rrca
-  rrca
-  and &3F
-  ld d,a                        ; last column
-  ld a,c
-  add a,e
-  dec a
-  rrca
-  rrca
-  rrca
-  and &1F
-  ld e,a                        ; last row
-  ld a,b
-  rrca
-  rrca
-  and &3F
-  ld b,a                        ; first column
-  ld (.col0+1),a
-  ld a,c
-  rrca
-  rrca
-  rrca
-  and &1F
-  ld c,a                        ; first row
-.row:
-.col0:
-  ld b,0
-.col:
-  push de
-  call mark_tile
-  pop de
-  ld a,b
-  inc b
-  cp d
-  jr nz,.col
-  ld a,c
-  inc c
-  cp e
-  jr nz,.row
-  ret
-
 ; B = view column, C = view row. Preserves BC.
 mark_tile:
   ld hl,(cur_dirty)
@@ -196,21 +149,38 @@ mark_tile:
   ld (hl),a
   ret
 
+  align 8                       ; kbd_test / cone indexing never carry
 bit_tab:
   db 1,2,4,8,16,32,64,128
 
-; Redraw and clear every marked tile of the back buffer.
+; Redraw every marked tile of the back buffer (the map is cleared after
+; the frame, since cone_draw still needs it).
 restore_dirty:
   ld hl,(cur_dirty)
   ld c,0
 .row:
+  ld a,(hl)                     ; whole row clean? (the usual case)
+  inc l
+  or (hl)
+  inc l
+  or (hl)
+  inc hl
+  jr nz,.dirty
+  inc c
+  ld a,c
+  cp VIEW_TH
+  jr nz,.row
+  ret
+.dirty:
+  dec hl
+  dec hl
+  dec hl
   ld b,0
   ld e,DIRTY_ROW
 .byte:
   ld a,(hl)
   or a
   jr z,.skip8
-  ld (hl),0
   push hl
   push de
   ld d,a
@@ -252,12 +222,11 @@ restore_dirty:
 ; Clear the back buffer's dirty map (after a full redraw).
 clear_dirty:
   ld hl,(cur_dirty)
-  ld b,DIRTY_SIZE
   xor a
-.lp:
+  repeat DIRTY_SIZE
   ld (hl),a
-  inc hl
-  djnz .lp
+  inc l                         ; maps sit in aligned 64-byte blocks
+  rend
   ret
 
 ; Redraw view tile (B, C) from the map into the back buffer.
@@ -325,8 +294,118 @@ map_cell:
 map_flags:
   call map_cell
   ld l,a
-  ld h,0
-  ld de,tile_attrs
-  add hl,de
+  ld h,tile_attrs>>8            ; page aligned
   ld a,(hl)
+  ret
+
+; ---------------------------------------------------------------------------
+; Map tiles (B, C) .. (B+D-1, C+E-1) were replaced in map_buf: refresh the
+; pathfinder's walk grids for them, redraw them in both buffers and recast
+; the vision cone (it may see further now). Cheaper than path_map_changed
+; plus a full view redraw.
+; ---------------------------------------------------------------------------
+map_rect_changed:
+  ld a,&FF
+  ld (cone_key),a
+.row:
+  push bc
+  push de
+.col:
+  push bc
+  push de
+  call map_tile_changed
+  pop de
+  pop bc
+  inc b
+  dec d
+  jr nz,.col
+  pop de
+  pop bc
+  inc c
+  dec e
+  jr nz,.row
+  ret
+
+; B = map column, C = map row
+map_tile_changed:
+  ld l,c                        ; E = tile attributes
+  ld h,0
+  add hl,hl
+  ld de,map_row_offs
+  add hl,de
+  ld e,(hl)
+  inc hl
+  ld d,(hl)
+  ld hl,map_buf
+  add hl,de
+  ld e,b
+  ld d,0
+  add hl,de
+  ld l,(hl)
+  ld h,tile_attrs>>8
+  ld e,(hl)
+  ld hl,PATH_W+1                ; grid cell: (row + 1) * PATH_W + col + 1
+  ld a,c
+  or a
+  jr z,.cell
+  push de
+  ld de,PATH_W
+.mul:
+  add hl,de
+  dec a
+  jr nz,.mul
+  pop de
+.cell:
+  ld a,b
+  add a,l
+  ld l,a
+  jr nc,.nc
+  inc h
+.nc:
+  push hl
+  ld a,e
+  and TF_SOLID|TF_WATER
+  ld a,P_OPEN
+  jr z,.land
+  ld a,P_BLOCKED
+.land:
+  ld d,h
+  push de
+  ld de,pf_cache_land
+  add hl,de
+  pop de
+  ld (hl),a
+  pop hl
+  ld a,e
+  and TF_SOLID
+  ld a,P_OPEN
+  jr z,.swim
+  ld a,P_BLOCKED
+.swim:
+  ld de,pf_cache_swim
+  add hl,de
+  ld (hl),a
+  ; visible? mark it in both dirty maps
+  ld a,b
+  ld hl,cam_x
+  sub (hl)
+  cp VIEW_TW
+  ret nc
+  ld b,a
+  ld a,c
+  ld hl,cam_y
+  sub (hl)
+  cp VIEW_TH
+  ret nc
+  ld c,a
+  ld hl,(cur_dirty)
+  push hl
+  ld hl,dirty_c0
+  ld (cur_dirty),hl
+  call mark_tile
+  ld hl,dirty_80
+  ld (cur_dirty),hl
+  call mark_tile
+  pop hl
+  ld (cur_dirty),hl
   ret

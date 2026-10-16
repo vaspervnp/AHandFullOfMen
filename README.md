@@ -69,7 +69,30 @@ and returning to their patrol afterwards, route around obstacles too.
 If nothing is in the way, the unit just walks straight there. Otherwise
 the game floods outward from the clicked tile on the 40×32 grid (8-way,
 no corner cutting) until it reaches the walker, then keeps only the turns
-as waypoints.
+as waypoints. The search runs in the background, in the time the main
+loop would otherwise spend waiting for the next frame, so the unit may
+pause for a few ticks before it sets off on a long detour. Only one
+search runs at a time; other units wait their turn.
+
+## Frame rate
+
+The game logic runs at 25 Hz: each tick has two frames of time. Measured
+on Caprice32 across the test scenarios, almost every tick fits in two
+frames. The exceptions are the first ticks after a mission starts and the
+tick the radio tower falls. Things that make this possible:
+
+- The renderer caches what each screen buffer shows. It restores and
+  redraws only sprites that moved or changed, plus anything overlapping
+  them, instead of the whole sprite list.
+- Vision cones are cast in three passes over three ticks, then swapped in.
+  A cone therefore trails a moving guard by a few ticks.
+- HUD text redraws only the characters that changed, and portraits only
+  when their highlight or health changes.
+- Path searches run in idle time (see Movement).
+- When the tower falls, only its tiles are redrawn and re-entered into
+  the walk grids.
+
+A scroll of the camera still redraws the whole view (about 3–4 frames).
 
 ## Layout
 
@@ -96,7 +119,8 @@ tests/                   scripted-input scenarios + assertions
 
 | Range | Contents |
 | --- | --- |
-| `&0040-&3FFF` | code, tables, variables, stack |
+| `&0040-&3EFF` | code, tables, variables |
+| `&3F00-&3FFF` | stack (measured depth is about 30 bytes; tests check a canary) |
 | `&4000-&7FFF` | tiles, font, title art, mission data, live map. Sprite banks 4 (Green Beret, guard, effects) and 5 (Marine, Sniper) are paged in here while blitting |
 | `&8000-&BFFF` | screen buffer B |
 | `&C000-&FFFF` | screen buffer A |
@@ -141,7 +165,15 @@ is the full game with scripted joystick input (a `SCENARIO` macro) that
 jumps to `&0000` when the script ends. Each scenario runs twice:
 
 - in `tools/cpcsim.py`, a small Python CPC simulator, where `tests/check.py`
-  asserts on RAM
+  asserts on RAM. It also compares the final screen against the same
+  scenario built with `REF_RENDER=1`, which redraws everything every frame,
+  and checks the stack canary.
 - in Caprice32 (`tools/cpcemu`, headless), which takes a screenshot
 
 The disk image is also booted with `RUN"DISC` and screenshotted.
+
+`tests/frames.py` reports frames per game tick for every scenario: from
+cpcsim, or exactly from Caprice32 with `--cap32`. For the Caprice32 numbers,
+the TEST build writes its histogram onto the screen and the script decodes
+it from the screenshot. `tools/profile_calls.py <test>` shows inclusive time
+per routine.

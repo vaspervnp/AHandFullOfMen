@@ -12,6 +12,13 @@
 ; Per-entity path slots (entities 0..PATH_SLOTS-1):
 ;   +0 count  +1 next index  +2 goal x  +3 goal y  +4 repath flag
 ;   +5.. waypoints (x, y)
+;
+; Searches never run inside a game tick. path_to records a job and parks
+; the walker on a one-point "pending" path (its own position, repath set),
+; so each time it "arrives" path_next asks again. The job itself (copy the
+; walk grid, flood, extract) runs in small slices from pf_idle, in the time
+; the main loop would otherwise spend halted waiting for VSYNC. One job at
+; a time; other walkers wait their turn.
 ; ===========================================================================
 
 PATH_W          equ MAP_W+2
@@ -25,7 +32,8 @@ P_OPEN          equ &FF
 P_MAX_DIST      equ &FC
 
 ; IX = entity, B,C = goal (world), A = blocking tile flags.
-; -> carry set if a path exists; tx/ty = first waypoint, state untouched.
+; -> carry set if a path exists or is being searched for (tx/ty = first
+;    waypoint), NC if the goal is blocked. State untouched.
 path_to:
   ld (pf_mask),a
   ld a,b
@@ -44,9 +52,135 @@ path_to:
   and (hl)
   jp nz,pf_fail
   call pf_walk_clear            ; open ground all the way: no search needed
-  jp c,pf_direct
-  call pf_fill
-  ; goal cell
+  jr c,.direct
+  ld a,(pf_job)
+  cp &FF
+  jr z,.start
+  cp (ix+ent.idx)
+  jp nz,pf_pending              ; searching for someone else: wait
+  ld hl,pf_job_gx               ; ours: same request still running?
+  ld a,(pf_gx)
+  cp (hl)
+  jr nz,.start
+  inc hl
+  ld a,(pf_gy)
+  cp (hl)
+  jr nz,.start
+  inc hl
+  ld a,(pf_mask)
+  cp (hl)
+  jp z,pf_pending
+.start:
+  ld a,(ix+ent.idx)
+  ld (pf_job),a
+  ld hl,pf_job_gx
+  ld a,(pf_gx)
+  ld (hl),a
+  inc hl
+  ld a,(pf_gy)
+  ld (hl),a
+  inc hl
+  ld a,(pf_mask)
+  ld (hl),a
+  cp TF_SOLID                   ; phase 1: copy the walk grid
+  ld hl,pf_cache_swim
+  jr z,.src
+  ld hl,pf_cache_land
+.src:
+  ld (pf_fill_src),hl
+  ld hl,path_dist
+  ld (pf_fill_dst),hl
+  ld hl,PATH_W*PATH_H
+  ld (pf_fill_left),hl
+  ld a,PF_FILL
+  ld (pf_job_phase),a
+  jp pf_pending
+.direct:
+  ld a,(pf_job)                 ; a search of ours is moot now
+  cp (ix+ent.idx)
+  jp nz,pf_direct
+  ld a,&FF
+  ld (pf_job),a
+  jp pf_direct
+
+; Park IX on its own position until the search for (pf_gx, pf_gy) is done.
+pf_pending:
+  ld hl,(pf_slot)
+  ld (hl),1                     ; one waypoint: here
+  inc hl
+  ld (hl),0
+  inc hl
+  ld a,(pf_gx)
+  ld (hl),a
+  inc hl
+  ld a,(pf_gy)
+  ld (hl),a
+  inc hl
+  ld (hl),1                     ; repath: ask again on "arrival"
+  inc hl
+  ld a,(ix+ent.x)
+  ld (hl),a
+  inc hl
+  ld a,(ix+ent.y)
+  ld (hl),a
+  call path_next
+  scf
+  ret
+
+; ---------------------------------------------------------------------------
+; Background search job
+; ---------------------------------------------------------------------------
+PF_FILL         equ 1           ; job phases
+PF_SETUP        equ 2
+PF_FLOOD        equ 3
+PF_FILL_CHUNK   equ 256         ; bytes of grid copied per slice
+PF_SLICE_POPS   equ 8           ; cells expanded per slice
+
+; Called while waiting for VSYNC: one slice of the current job, or halt.
+pf_idle:
+  ld a,(pf_job)
+  inc a
+  jr nz,.work
+  halt
+  ret
+.work:
+  ld a,(pf_job_phase)
+  cp PF_FLOOD
+  jr z,pf_idle_flood
+  cp PF_SETUP
+  jr z,pf_idle_setup
+  ; PF_FILL: copy the next chunk of the walk grid into path_dist
+  ld hl,(pf_fill_left)
+  ld bc,PF_FILL_CHUNK
+  or a
+  sbc hl,bc
+  jr nc,.chunk
+  add hl,bc                     ; last, short chunk
+  ld b,h
+  ld c,l
+  ld hl,0
+.chunk:
+  ld (pf_fill_left),hl
+  ld hl,(pf_fill_src)
+  ld de,(pf_fill_dst)
+  ld a,b
+  or c
+  jr z,.filled
+  ldir
+  ld (pf_fill_src),hl
+  ld (pf_fill_dst),de
+  ld hl,(pf_fill_left)
+  ld a,h
+  or l
+  ret nz
+.filled:
+  ld a,PF_SETUP
+  ld (pf_job_phase),a
+  ret
+
+; Goal and start cells, then start the flood.
+pf_idle_setup:
+  call pf_job_load
   ld a,(pf_gx)
   ld b,a
   ld a,(pf_gy)
@@ -54,10 +188,9 @@ path_to:
   call pf_cell
   ld a,(hl)
   cp P_BLOCKED
-  jp z,pf_fail
+  jp z,pf_job_fail
   ld (hl),0
   ld (pf_goal),hl
-  ; start cell
   ld b,(ix+ent.x)
   ld c,(ix+ent.y)
   call pf_cell
@@ -65,19 +198,81 @@ path_to:
   ld de,(pf_goal)
   or a
   sbc hl,de
-  jp z,pf_direct                ; same tile: just walk to the point
+  jp z,pf_job_direct            ; same tile: just walk to the point
   ld hl,(pf_start)              ; standing in a "blocked" tile (e.g. corner
   ld a,(hl)                     ; slide)? treat it as open
   cp P_BLOCKED
   jr nz,.flood
   ld (hl),P_OPEN
 .flood:
-  push ix                       ; the flood walks direction records in IX
-  call pf_flood
+  call pf_flood_init
+  ld a,PF_FLOOD
+  ld (pf_job_phase),a
+  ret
+
+pf_idle_flood:
+  call pf_job_load
+  ld a,PF_SLICE_POPS
+  ld (pf_pops),a
+  push ix                       ; the flood leaves IX alone, but be safe
+  call pf_flood_run
   pop ix
-  jp nc,pf_fail
-  call pf_extract
-  scf
+  jr c,pf_job_reached
+  ret nz                        ; out of slice: more next time
+  ; queue empty: unreachable
+pf_job_fail:
+  call pf_job_end
+  ret nz
+  jp pf_fail
+
+pf_job_direct:
+  call pf_job_end
+  ret nz
+  jp pf_direct
+
+pf_job_reached:
+  call pf_job_end
+  ret nz
+  jp pf_extract
+
+; IX = job owner; pf_gx/gy/mask/slot = the job's request
+pf_job_load:
+  ld a,(pf_job)
+  call ent_ptr
+  ld hl,pf_job_gx
+  ld a,(hl)
+  ld (pf_gx),a
+  inc hl
+  ld a,(hl)
+  ld (pf_gy),a
+  inc hl
+  ld a,(hl)
+  ld (pf_mask),a
+  call path_slot
+  ld (pf_slot),hl
+  ret
+
+; Job over. Z if the owner is still waiting for this result (its slot is
+; the pending path for this goal); NZ if it has moved on.
+pf_job_end:
+  ld a,&FF
+  ld (pf_job),a
+  ld hl,(pf_slot)
+  ld a,(hl)
+  cp 1
+  ret nz
+  inc hl
+  inc hl
+  ld a,(pf_gx)
+  cp (hl)
+  ret nz
+  inc hl
+  ld a,(pf_gy)
+  cp (hl)
+  ret nz
+  inc hl
+  ld a,(hl)
+  cp 1
   ret
 
 ; IX = walker. Carry if walking straight at the goal (the way ent_step
@@ -86,6 +281,7 @@ pf_walk_clear:
   ld b,(ix+ent.x)
   ld c,(ix+ent.y)
   ld e,0                        ; tick parity
+  ld d,&FF                      ; D = last tile column tested
 .step:
   ld a,(pf_gx)
   cp b
@@ -123,6 +319,28 @@ pf_walk_clear:
   dec c
 .check:
   inc e
+  ld a,b                        ; same tile as the last test? skip it
+  rrca
+  rrca
+  and &3F
+  cp d
+  ld d,a
+  jr nz,.test
+  ld a,c
+  rrca
+  rrca
+  rrca
+  and &1F
+  ld hl,pf_wc_row
+  cp (hl)
+  jr z,.step
+.test:
+  ld a,c
+  rrca
+  rrca
+  rrca
+  and &1F
+  ld (pf_wc_row),a
   push bc
   push de
   call map_flags
@@ -252,20 +470,6 @@ cmd_or_guard_mask:
 ; ---------------------------------------------------------------------------
 ; Flood fill internals
 ; ---------------------------------------------------------------------------
-
-; Initialise path_dist from the cached walkability grid for (pf_mask):
-; walkers (solid + water block) or the swimming Marine (only solid blocks).
-pf_fill:
-  ld a,(pf_mask)
-  cp TF_SOLID
-  ld hl,pf_cache_swim
-  jr z,.copy
-  ld hl,pf_cache_land
-.copy:
-  ld de,path_dist
-  ld bc,PATH_W*PATH_H
-  ldir
-  ret
 
 ; The map changed (new mission, tower destroyed): rebuild both grids now,
 ; while the screen is blank or the explosion covers the pause.
@@ -402,7 +606,7 @@ macro PF_DIAG off,side1,side2
 @skip:
 mend
 
-pf_flood:
+pf_flood_init:
   ld hl,(pf_start)              ; patch the start test in pf_visit
   ld a,l
   ld (pf_visit.lo+1),a
@@ -416,7 +620,18 @@ pf_flood:
   ld (hl),d
   inc hl
   ld (pf_tail),hl
+  ret
+
+; Expand up to (pf_pops) cells. -> carry: reached the walker;
+; NC + Z: queue empty (unreachable); NC + NZ: slice used up.
+pf_flood_run:
 .pop:
+  ld hl,pf_pops
+  dec (hl)
+  jr nz,.more
+  or 1                          ; slice used up: NZ, NC
+  ret
+.more:
   ld hl,(pf_head)
   ld de,(pf_tail)
   or a
@@ -444,7 +659,7 @@ pf_flood:
   PF_DIAG -PATH_W-1, -PATH_W, -1
   jp .pop
 
-; HL = newly labelled cell. Reached the walker? Leave pf_flood with carry
+; HL = newly labelled cell. Reached the walker? Leave pf_flood_run with carry
 ; (drops our return address). Else enqueue it. Preserves C and DE.
 pf_visit:
 .lo:

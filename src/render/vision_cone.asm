@@ -17,6 +17,9 @@ CONE_SPREAD     equ 5           ; angle between rays (1/256 turns)
 CONE_PEN_SHORT  equ 7           ; cyan/teal
 CONE_PEN_LONG   equ 6           ; green
 CONE_NONE       equ &FF
+CONE_PASSES     equ 3           ; a cast is spread over 3 ticks: rays p, p+3, p+6
+CONE_PASS_RAYS  equ 3
+  assert CONE_PASSES*CONE_PASS_RAYS==CONE_RAYS
 
 ; Per tick: pick the guard to show and refresh its rays if needed.
 cone_update:
@@ -32,6 +35,31 @@ cone_update:
   ld a,CONE_NONE
   ld (cone_pinned),a
 .pick:
+  ld a,(cone_pending)           ; a cast in progress: one step per tick
+  or a
+  jr z,.pick2
+  dec a
+  jr z,.show
+  ld (cone_pending),a           ; next pass of the rays
+  ld a,(cone_ang_b)
+  add a,CONE_SPREAD
+  ld (cone_ang_b),a
+  ld (cone_ang),a
+  ld a,(cone_key)               ; same guard as the first pass
+  call ent_ptr
+  ld b,CONE_PASS_RAYS
+  jp cone_cast_rays
+.show:                          ; complete: show it
+  ld (cone_pending),a
+  call cone_dirty               ; erase the old dots
+  ld hl,cone_tiles_new
+  ld de,cone_tiles
+  ld bc,DIRTY_SIZE
+  ldir
+  ld a,3                        ; both buffers plot the new dots
+  ld (cone_fresh),a
+  ret
+.pick2:
   call guard_under_cursor
   jr c,.have
   ld a,(cone_pinned)
@@ -86,8 +114,10 @@ cone_update:
   inc hl
   ld a,(cam_y)
   ld (hl),a
-  call cone_erase
-  jp cone_cast
+  call cone_cast                ; one pass now, the rest on the next
+  ld a,CONE_PASSES              ; ticks, then shown: casting and erasing
+  ld (cone_pending),a           ; the old cone never share a tick
+  ret
 .dead:
   ld a,CONE_NONE
   ld (cone_pinned),a
@@ -104,6 +134,19 @@ cone_update:
 
 ; Schedule the old cone's tiles for redraw in both buffers, forget them.
 cone_erase:
+  call cone_dirty
+  ld hl,cone_tiles
+  ld b,DIRTY_SIZE
+  xor a
+.lp:
+  ld (hl),a
+  inc hl
+  djnz .lp
+  ld (cone_count),a
+  ret
+
+; Mark the cone's tiles dirty in both buffers.
+cone_dirty:
   ld hl,cone_tiles
   ld de,dirty_c0
   ld bc,dirty_80
@@ -116,22 +159,21 @@ cone_erase:
   ld a,(bc)
   or (hl)
   ld (bc),a
-  ld (hl),0
   inc hl
   inc de
   inc bc
   pop af
   dec a
   jr nz,.lp
-  xor a
-  ld (cone_count),a
   ret
 
 ; -> carry + A = index if a live guard is under the cursor
+; (update_cursor_frame found the entity there this tick)
 guard_under_cursor:
-  call cursor_world
-  call ent_at
+  ld a,(cursor_ent)
+  cp MAX_ENTS
   ret nc
+  call ent_ptr
   ld b,a
   ld a,(ix+ent.type)
   cp ET_GUARD
@@ -144,6 +186,19 @@ guard_under_cursor:
 ; IX = guard. Fill cone_buf with (screen offset, colour) dots and
 ; cone_tiles with the view tiles they touch.
 cone_cast:
+  ld hl,cone_tiles_new
+  ld b,DIRTY_SIZE
+  xor a
+.clr:
+  ld (hl),a
+  inc hl
+  djnz .clr
+  ld a,CONE_PEN_SHORT
+  call pen_byte
+  ld (cone_pen_s),a
+  ld a,CONE_PEN_LONG
+  call pen_byte
+  ld (cone_pen_l),a
   xor a
   ld (cone_count),a
   ld hl,cone_buf
@@ -163,13 +218,16 @@ cone_cast:
   rrca
   sub CONE_SPREAD*(CONE_RAYS-1)/2
   ld (cone_ang),a
-  ld b,CONE_RAYS
+  ld (cone_ang_b),a             ; first ray of the next pass
+  ld b,CONE_PASS_RAYS
+; Cast B more rays from (cone_ang), appending to cone_buf.
+cone_cast_rays:
 .ray:
   push bc
   call cone_ray
   ld a,(cone_ang)
-  add a,CONE_SPREAD
-  ld (cone_ang),a
+  add a,CONE_SPREAD*CONE_PASSES ; interleaved: the passes share the
+  ld (cone_ang),a               ; work evenly
   pop bc
   djnz .ray
   ret
@@ -208,63 +266,115 @@ cone_ray:
   add hl,de                     ; *5
   add hl,hl                     ; *10
   ld (cone_dy),hl
-  ; start at the eyes, centre of the unit
-  ld h,(ix+ent.x)
-  ld l,128
-  ld (cone_fx),hl
+  ; sides of the view this ray moves away from (cone_store's codes)
+  ld c,0
+  ld hl,(cone_dx)
+  ld a,h
+  or l
+  jr z,.dy
+  ld c,1                        ; left
+  bit 7,h
+  jr nz,.dy
+  ld c,2                        ; right
+.dy:
+  ld hl,(cone_dy)
+  ld a,h
+  or l
+  jr z,.away
+  ld a,4                        ; up
+  bit 7,h
+  jr nz,.up
+  ld a,8                        ; down
+.up:
+  or c
+  ld c,a
+.away:
+  ld a,c
+  ld (cone_away),a
+  ; IY = x, BC = dx; alternate set: HL = y, BC = dy, D = step (all 8.8)
+  push iy
+  ld bc,(cone_dx)
+  ld a,(ix+ent.x)               ; start at the eyes, centre of the unit
+  ld iyh,a
+  ld iyl,128
   ld a,(ix+ent.y)
   sub 8
+  exx
   ld h,a
   ld l,128
-  ld (cone_fy),hl
-  ld c,0                        ; step counter
+  ld bc,(cone_dy)
+  ld d,0
+  exx
 .step:
-  ld a,c
-  ld (cone_step),a
-  ; x += dx (stop at the map edge)
-  ld hl,(cone_fx)
-  ld de,(cone_dx)
-  add hl,de
-  ld (cone_fx),hl
-  ld a,h
+  add iy,bc                     ; x += dx (stop at the map edge)
+  ld a,iyh
   cp MAP_W*4
-  ret nc
-  ld b,a
-  ; y += dy (stop on wrap past the top or bottom)
-  ld hl,(cone_fy)
-  ld de,(cone_dy)
-  add hl,de
-  push af
-  bit 7,d
-  jr nz,.up
-  pop af
-  ret c                         ; ran off the bottom
-  jr .y_ok
-.up:
-  pop af
-  ret nc                        ; ran off the top
-.y_ok:
-  ld (cone_fy),hl
+  jr nc,.end
+  ld e,a
+  exx
+  add hl,bc                     ; y += dy
+  ld a,d
+  ld (cone_step),a
+  inc d
   ld a,h
-  cp 16
-  ret c
-  push bc
-  ld c,a
-  push bc
-  call map_flags
-  pop bc
+  exx
+  cp 16                         ; off the top, or wrapped past the bottom
+  jr c,.end
+  ld d,a
+  rrca                          ; map row address
+  rrca
+  rrca
+  and &1F
+  add a,a
+  add a,map_rows and &FF
+  ld l,a
+  ld h,map_rows>>8
+  ld a,(hl)
+  inc l
+  ld h,(hl)
+  ld l,a
+  ld a,e
+  rrca
+  rrca
+  and &3F
+  add a,l
+  ld l,a
+  adc a,h
+  sub l
+  ld h,a
+  ld a,(hl)                     ; tile -> attributes
+  ld l,a
+  ld h,tile_attrs>>8
+  ld a,(hl)
   and TF_OPAQUE
-  jr nz,.blocked
-  call cone_store                ; B, C = world x, y
+  jr nz,.end
+  push bc
+  push de
+  ld b,e
+  ld c,d
+  call cone_store
+  pop de
   pop bc
-  inc c
-  ld a,c
+  jr nc,.next
+  ld hl,cone_away               ; outside, heading away from the view: done
+  and (hl)
+  jr nz,.end
+.next:
+  exx
+  ld a,d
+  exx
   cp CONE_STEPS
   jr nz,.step
+.end:
+  pop iy
   ret
-.blocked:
-  pop bc
-  ret
+
+; Rows of map_buf (cone_ray)
+  align 64
+map_rows:
+  repeat MAP_H,row
+  dw map_buf+(row-1)*MAP_W
+  rend
 
 ; A = angle -> A = sin * 127 (signed)
 sin_a:
@@ -279,96 +389,175 @@ sin_a:
   pop hl
   ret
 
-; B, C = world dot; (SP+2) = step counter in its low byte. Stores the dot if
-; it is inside the view.
+; B, C = world dot, (cone_step) = step. Stores the dot if it is inside the
+; view, else returns carry and A = the side it is off: 1 left, 2 right,
+; 4 above, 8 below.
 cone_store:
   ld a,(cone_cx)
   ld e,a
   ld a,b
   sub e
-  ret c
+  jr c,.left
   cp SCR_W
-  ret nc
+  jr nc,.right
   ld b,a                        ; screen x
   ld a,(cone_cy)
   ld e,a
   ld a,c
   sub e
-  ret c
+  jr c,.above
   cp PLAY_H
-  ret nc
+  jr nc,.below
   ld c,a                        ; screen y
-  push bc
   ld l,c                        ; offset = scr_line[y] + x
   ld h,0
   add hl,hl
   ld de,scr_line
   add hl,de
-  ld e,(hl)
+  ld a,(hl)
   inc hl
-  ld d,(hl)
-  ld l,b
-  ld h,0
-  add hl,de
+  ld h,(hl)
+  add a,b
+  ld l,a
+  jr nc,.nc
+  inc h
+.nc:
   ex de,hl
   ld hl,(cone_wr)
   ld (hl),e
   inc hl
   ld (hl),d
   inc hl
+  ld a,c                        ; dirty map byte: row * 3 + column / 8
+  rrca
+  rrca
+  rrca
+  and &1F
+  ld e,a
+  add a,a
+  add a,e
+  ld e,a
+  ld a,b
+  rlca
+  rlca
+  rlca
+  and 3
+  add a,e
+  ld (hl),a
+  inc hl
+  ld e,a
+  ld a,b                        ; ... and bit: column and 7
+  rrca
+  rrca
+  and 7
+  or bit_tab and &FF
+  ld c,a
+  ld b,bit_tab>>8
+  ld a,(bc)
+  ld (hl),a
+  inc hl
+  ld c,a                        ; mark the tile in cone_tiles_new
+  ld a,e
+  add a,cone_tiles_new and &FF
+  ld e,a
+  ld d,cone_tiles_new>>8
+  ld a,(de)
+  or c
+  ld (de),a
   ld a,(cone_step)
   cp CONE_SHORT
-  ld a,CONE_PEN_SHORT
+  ld a,(cone_pen_s)
   jr c,.zone
-  ld a,CONE_PEN_LONG
+  ld a,(cone_pen_l)
 .zone:
-  call pen_byte
   ld (hl),a
   inc hl
   ld (cone_wr),hl
   ld hl,cone_count
   inc (hl)
-  pop bc                        ; mark its tile in cone_tiles
-  ld a,b
-  rrca
-  rrca
-  and &3F
-  ld b,a
-  ld a,c
-  rrca
-  rrca
-  rrca
-  and &1F
-  ld c,a
-  ld hl,(cur_dirty)
-  push hl
-  ld hl,cone_tiles
-  ld (cur_dirty),hl
-  call mark_tile
-  pop hl
-  ld (cur_dirty),hl
+  or a
+  ret
+.left:
+  ld a,1
+  scf
+  ret
+.right:
+  ld a,2
+  scf
+  ret
+.above:
+  ld a,4
+  scf
+  ret
+.below:
+  ld a,8
+  scf
   ret
 
-; Plot the cached dots into the back buffer (called by render_frame).
+; Plot the cached dots: all of them right after a recast (cone_plot_all),
+; else those on tiles restored this frame (elsewhere the dot from an
+; earlier frame is still there, possibly under a sprite).
+CONE_DOT        equ 5           ; screen offset (2), dirty byte, bit, pen
 cone_draw:
   ld a,(cone_count)
   or a
   ret z
   ld b,a
+  ld a,(cone_plot_all)
+  or a
+  jr z,.filtered
   ld a,(back_hi)
   ld c,a
+  ld hl,cone_buf
+.all:
+  ld e,(hl)
+  inc hl
+  ld a,(hl)
+  add a,c
+  ld d,a
+  inc hl
+  inc hl
+  inc hl
+  ld a,(hl)
+  ld (de),a
+  inc hl
+  djnz .all
+  ret
+.filtered:
+  ld a,b
+  push ix
+  ld ixl,a
+  ld a,(back_hi)
+  ld (.hi+1),a
+  ld a,(cur_dirty)
+  ld (.base+1),a
+  ld a,(cur_dirty+1)
+  ld b,a
   ld hl,cone_buf
 .dot:
   ld e,(hl)
   inc hl
   ld a,(hl)
   inc hl
-  add a,c
+.hi:
+  add a,0
   ld d,a
   ld a,(hl)
   inc hl
+.base:
+  add a,0                       ; dirty map: aligned, never crosses a page
+  ld c,a
+  ld a,(bc)
+  and (hl)
+  inc hl
+  jr z,.skip
+  ld a,(hl)
   ld (de),a
-  djnz .dot
+.skip:
+  inc hl
+  dec ixl
+  jr nz,.dot
+  pop ix
   ret
 
 ; sin(a * 2pi / 256) * 127
