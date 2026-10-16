@@ -55,7 +55,7 @@ def run(base, slow, ticks):
         return orig()
     m.run = hook
     count = syms["fuzz_count"]
-    last, still, missions, prev_tick = None, 0, 0, 0
+    last, still, missions, prev_tick = None, 0, [], 0
     limit = ticks * 6 + 2000
     while not cpc.stopped and cpc.frame < limit:
         cpc.run_frame()
@@ -66,8 +66,8 @@ def run(base, slow, ticks):
         if still > 400:
             return f"hang at frame {cpc.frame} (PC={m.pc:04X})", cpc, syms, missions
         tick = cpc.base_ram(syms["tick"])[0]
-        if tick < prev_tick and prev_tick > 5:
-            missions += 1
+        if tick > 5 and (prev_tick <= 5 or not missions):
+            missions.append(cpc.base_ram(syms["cur_mission"])[0] + 1)   # one entry per mission played
         prev_tick = tick
     if bad:
         f, pc, sp = bad[0]
@@ -99,7 +99,8 @@ def main():
         err, cpc, syms, missions = run(build(seed, a.ticks), a.slow, a.ticks)
         hist = list(cpc.base_ram(syms["frame_hist"], 8))
         ticks = " ".join(f"{n}f:{hist[n]}" for n in range(1, 8) if hist[n])
-        state = f"{cpc.frame} frames, {missions + 1} missions, ticks {ticks}"
+        played = " ".join(str(n) for n in sorted(set(missions)))
+        state = f"{cpc.frame} frames, {len(missions)} missions ({played}), ticks {ticks}"
         if err:
             print(f"FAIL fuzz seed {seed}: {err} ({state})")
             fail = 1

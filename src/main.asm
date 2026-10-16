@@ -330,7 +330,7 @@ fuzz_rand:
 
 fuzz_keys:
   db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_V,KEY_RETURN
-  db KEY_1,KEY_2,KEY_3,KEY_C,KEY_D,KEY_G,KEY_4,KEY_ESC
+  db KEY_1,KEY_2,KEY_3,KEY_5,KEY_D,KEY_G,KEY_4,KEY_ESC
 fuzz_state: dw FUZZ_SEED*2+1           ; odd, distinct per seed
 fuzz_count: dw FUZZ_TICKS
 fuzz_hold:  db 1
@@ -617,6 +617,7 @@ bank7_start:
   include "mission02_map.asm"   ; generated: build/mission02_map.asm
   include "mission03_map.asm"   ; generated: build/mission03_map.asm
   include "mission04_map.asm"   ; generated: build/mission04_map.asm
+  include "mission05_map.asm"   ; generated: build/mission05_map.asm
 mis_phys_1:                    ; mission 1, assembled for mis_buf
   org mis_buf,mis_phys_1
   include "missions/mission01.asm"
@@ -641,7 +642,13 @@ mis_phys_4:                    ; mission 4, assembled for mis_buf
 mis_end_4:
   assert mis_end_4-mis_buf<=MIS_BUF_SIZE
   org mis_phys_4+mis_end_4-mis_buf
-  ds MIS_BUF_SIZE-(mis_end_4-mis_buf)  ; the last copy reads a whole buffer
+mis_phys_5:                    ; mission 5, assembled for mis_buf
+  org mis_buf,mis_phys_5
+  include "missions/mission05.asm"
+mis_end_5:
+  assert mis_end_5-mis_buf<=MIS_BUF_SIZE
+  org mis_phys_5+mis_end_5-mis_buf
+  ds MIS_BUF_SIZE-(mis_end_5-mis_buf)  ; the last copy reads a whole buffer
 bank7_end:
   assert bank7_end<=&8000
 

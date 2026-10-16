@@ -41,7 +41,7 @@ CHAR_RES = (96, 64)         # 12x16 Mode 0 sprite * (8, 4)
 TOWER_RES = (128, 128)      # 16x32 Mode 0 stamp * (8, 4)
 UNIT = 2.8 / 24             # Blender units per visual unit (character framing)
 SUBJECTS = ["beret", "marine", "sniper", "sapper", "spy", "guard", "tower", "pine", "rock",
-            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "railbridge", "portraits", "banner"]
+            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "railbridge", "gun", "portraits", "banner"]
 OPERATIVES = ("beret", "marine", "sniper", "sapper", "spy")      # portrait order = ROLE_*
 
 LOOKS = {
@@ -453,6 +453,20 @@ def build_railbridge(sc):                             # 4x3 tiles: 32x24 Mode 0 
     frame_camera(sc, 32, 24)
 
 
+def build_gun(sc):                                # 4x3 tiles: 32x24 Mode 0 px, coastal gun aimed west
+    cy = 1.7                                         # the pit's centre, north of the front edge
+    cyl("pit", 1.75, 0.45, (0, cy, 0.22), "white", verts=16)         # concrete emplacement
+    cyl("floor", 1.4, 0.52, (0, cy, 0.26), "grey", verts=16)
+    cyl("mount", 0.6, 0.25, (0, cy, 0.55), "black", verts=12)
+    box("shield", (1.1, 0.9, 0.45), (0.15, cy, 0.8), "olive")      # gun house
+    box("roof", (1.15, 0.95, 0.1), (0.15, cy, 1.05), "teal")
+    cyl("barrel", 0.13, 2.6, (-1.7, cy, 0.8), "black", verts=8, rot=(0, math.radians(90), 0))
+    cyl("muzzle", 0.17, 0.25, (-2.95, cy, 0.8), "grey", verts=8, rot=(0, math.radians(90), 0))
+    for x, y in ((2.4, cy - 0.8), (2.6, cy), (2.4, cy + 0.8)):     # shell crates by the rim
+        box("crate", (0.4, 0.3, 0.3), (x, y, 0.15), "red")
+    frame_camera(sc, 32, 24)
+
+
 def build_trap(sc):                               # bear trap, in a 12x16 sprite cell
     cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=10)
     for y in (-0.36, 0.36):                          # open jaws, teeth up
@@ -570,7 +584,7 @@ def render_prop(subject, out_dir, blend_dir):
     builders = {"tower": build_tower, "pine": build_pine, "rock": build_rock,
                 "barrel": build_barrel, "truck": build_truck, "banner": build_banner,
                 "depot": build_depot, "trap": build_trap, "bomb": build_bomb,
-                "uboat": build_uboat, "railbridge": build_railbridge}
+                "uboat": build_uboat, "railbridge": build_railbridge, "gun": build_gun}
     sc, _ = open_or_build(subject, blend_dir, builders[subject])
     render_still(sc, out_dir, subject, subject)
 

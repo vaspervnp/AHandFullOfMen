@@ -301,6 +301,36 @@ def check_t41_m4_escape(r):
     assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
 
 
+def check_t42_m5_boot(r):
+    assert r.byte("cur_mission") == 4
+    assert [r.ent(i, "role") for i in range(3)] == [1, ROLE_SAPPER, ROLE_SPY], "wrong squad"
+    guards = sum(1 for i in range(16) if r.ent(i, "type") == 2)
+    assert guards == 7, f"{guards} sentries"
+    assert r.byte("alarm") == 0, "spotted at the start"
+
+
+def check_t43_m5_bomb(r):
+    assert r.byte("target_down") == 1, "the gun is still there"
+    assert r.byte("map_buf", 9 * 40 + 13) == TILE_RUBBLE, "gun tiles not replaced"
+    assert r.byte("alarm") == 1
+    assert r.byte("bombs") == 0
+
+
+def check_t44_m5_route_swim(r):
+    ok, pos = near(r, 0, 50, 63)
+    assert ok, f"Marine at {pos}, never swam in through the gap (50,63)"
+
+
+def check_t45_m5_route_gate(r):
+    ok, pos = near(r, 1, 62, 95)
+    assert ok, f"Sapper at {pos}, never reached the gun (62,95)"
+
+
+def check_t46_m5_escape(r):
+    assert r.ent(2, "flags") & EF_BOARDED, "the Spy did not board the truck"
+    assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

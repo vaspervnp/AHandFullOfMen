@@ -170,3 +170,15 @@ tile_attrs:
   db TF_SOLID                  ; 156 rbridge11
   db 0                         ; 157 rail_l
   db 0                         ; 158 rail_r
+  db TF_SOLID                   ; 159 gun0 (4x3 coastal gun: all solid, the gun house opaque)
+  db TF_SOLID|TF_OPAQUE         ; 160 gun1
+  db TF_SOLID|TF_OPAQUE         ; 161 gun2
+  db TF_SOLID                   ; 162 gun3
+  db TF_SOLID                   ; 163 gun4
+  db TF_SOLID|TF_OPAQUE         ; 164 gun5
+  db TF_SOLID|TF_OPAQUE         ; 165 gun6
+  db TF_SOLID                   ; 166 gun7
+  db TF_SOLID                   ; 167 gun8
+  db TF_SOLID|TF_OPAQUE         ; 168 gun9
+  db TF_SOLID|TF_OPAQUE         ; 169 gun10
+  db TF_SOLID                   ; 170 gun11

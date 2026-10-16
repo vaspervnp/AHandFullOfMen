@@ -33,7 +33,7 @@ expansion. On a 64K machine the loader says so and returns to BASIC.
 | V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
-The title menu lists these shortcuts too. Keys 1 to 4 on the menu pick the
+The title menu lists these shortcuts too. Keys 1 to 5 on the menu pick the
 mission. Space or Fire opens its briefing (objectives, and what each
 commando's D and G do), and pressing it again starts the mission.
 Accomplishing a mission moves the menu on to the next one.
@@ -84,6 +84,14 @@ both ends. Blow the bridge with the Sapper's time bomb, then get the
 survivors to the truck in the camp on the north bank. Once the span is
 down, the frozen ford in the west is the only way across. Squad: Green
 Beret, Sapper, Sniper (abilities as above).
+
+## Mission 5: The Guns of Vardo
+
+A coastal gun in a concrete pit, inside a fenced battery on a headland.
+The only gate faces the south road, but there's a gap in the north fence
+that only the Marine can reach, by swimming up the coast. Blow the gun
+with the Sapper's time bomb, then take the truck east along the road.
+Squad: Marine, Sapper, Spy (abilities as above).
 
 ## Stealth rules
 

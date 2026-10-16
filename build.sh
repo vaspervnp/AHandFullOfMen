@@ -26,6 +26,7 @@ python3 tools/map2asm.py assets/maps/mission01.txt map_mission01 build/mission01
 python3 tools/map2asm.py assets/maps/mission02.txt map_mission02 build/mission02_map.asm
 python3 tools/map2asm.py assets/maps/mission03.txt map_mission03 build/mission03_map.asm
 python3 tools/map2asm.py assets/maps/mission04.txt map_mission04 build/mission04_map.asm
+python3 tools/map2asm.py assets/maps/mission05.txt map_mission05 build/mission05_map.asm
 python3 tools/music2asm.py build/music.asm assets/music/title.txt assets/music/win.txt assets/music/lose.txt
 
 cd build
