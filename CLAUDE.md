@@ -68,11 +68,16 @@
   first, MIS_* in defs.asm, then texts, briefing, spawns, routes) stored in
   bank 7 but assembled for `mis_buf` (`org mis_buf,mis_phys_N` in main.asm,
   max `MIS_BUF_SIZE`). `mission_select` copies the block into `mis_buf` and
-  the descriptor into `mis`. Maps also live in bank 7 and are copied into
-  `map_buf`; both copies go through `bounce`. Commandos have `ent.role` (ROLE_*), set from their spawn
+  the descriptor into `mis` (through `bounce`).
+- Maps: `tools/map2asm.py` packs them (LZ, format in its docstring) into
+  banks 6 (maps 1-4) and 5 (maps 5-6); the bank is the descriptor's
+  `MIS_MAP_BANK`. `map_unpack` decodes straight into `map_buf`, paging the
+  source bank in per byte, then scatters snow specks with a fixed-seed
+  generator (',' and ':' in the map text count as plain snow). New maps
+  can go in bank 7. Commandos have `ent.role` (ROLE_*), set from their spawn
   record's route word. Never key behaviour off the entity index.
 - Banks: 4 = beret/guard/cursor/fx, 5 = marine/sniper/music, 6 = sapper/spy,
-  7 = title banner + maps + mission blocks. The &4000 data area is hidden while any of them is
+  7 = title banner + mission blocks; maps in 5 and 6. The &4000 data area is hidden while any of them is
   paged in, so data read during `draw_items` (e.g. `scr_line`) must stay in
   the code area.
 - Code area limit: `code_end <= &3F00` (test builds are ~&100 bigger). Constant
@@ -84,8 +89,8 @@
   build their walk grid from `map_buf` each time.
 - Renderer: `render_frame` diffs draw items against a per-buffer cache.
   Anything drawn into the play area must go through it (draw items or
-  tiles marked dirty), or the `REF_RENDER` comparison in tests/check.py
-  fails.
+  tiles marked dirty), or the full-redraw comparison in tests/check.py
+  (`test_done` redraws the hidden buffer at the end) fails.
 - A full view redraw (camera scroll) is sliced over ticks (`REDRAW_SLICE`
   rows each); `render_frame` returns NC until the back buffer is complete
   and the main loop only flips on carry. The camera can't move while

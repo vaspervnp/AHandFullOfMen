@@ -16,6 +16,7 @@ m04_desc:
   dw m04_txt_name, m04_txt_brief, m04_txt_hud1, m04_txt_hud2, m04_txt_obj
   db M04_GUARDS
   dw m04_briefing
+  db MAP04_BANK
 m04_ruin:                       ; the span falls into the river
   ds 4*3,TILE_WATER
 m04_txt_name:  db "MISSION 4: A BRIDGE TOO FAR",0

@@ -16,11 +16,7 @@
 ; become touched), so only erasing an old cone costs tile restores.
 ; A camera move redraws the whole view and every item, REDRAW_SLICE tile
 ; rows per tick (the camera stays put meanwhile, see cursor.asm).
-  if REF_RENDER
-REDRAW_SLICE    equ VIEW_TH
-  else
 REDRAW_SLICE    equ 4
-  endif
 ; ===========================================================================
 
 ; draw item / cache entry (16 bytes)
@@ -68,9 +64,6 @@ render_frame:
   ld (cur_cache),hl
   inc b
   ld a,(view_dirty)
-  if REF_RENDER                 ; reference build for tests: always redraw
-  ld a,3
-  endif
   and b
   ld (full_redraw),a
   jr z,.items

@@ -3,10 +3,9 @@
 
 Usage: check.py <test name>   (expects build/tests/<name>.sna/.sym)
 Each scenario's script ends with a jump to &0000; we then inspect RAM.
-If build/tests/<name>_ref.sna exists (the same scenario assembled with
-REF_RENDER=1, which redraws the whole view every frame), the screen shown
-at the end must match it byte for byte: the dirty-tile renderer may skip
-work, never pixels.
+At the end the TEST build redraws the whole view of the same moment into the
+hidden buffer (test_done); the play area on show must match it byte for
+byte: the dirty-tile renderer may skip work, never pixels.
 """
 import os
 import sys
@@ -14,6 +13,8 @@ import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import cpcsim  # noqa: E402
+
+VIEW_LINES = 18 * 8              # play area (VIEW_TH tile rows); the HUD is below
 
 ENT_SIZE = 32
 ENT = {"type": 0, "x": 1, "y": 2, "dir": 3, "state": 5, "tx": 6, "ty": 7, "flags": 8,
@@ -36,6 +37,12 @@ class Run:
     def shown(self):
         """Displayed screen, minus the frame_hist bytes test_end puts on line 0."""
         scr = self.cpc.base_ram(((self.cpc.crtc[12] >> 4) & 3) * 0x4000, 0x4000)
+        scr[0:10] = bytes(10)
+        return scr
+
+    def hidden(self):
+        """The other buffer: test_done redraws the view into it at the end."""
+        scr = self.cpc.base_ram((((self.cpc.crtc[12] >> 4) & 3) ^ 1) * 0x4000, 0x4000)
         scr[0:10] = bytes(10)
         return scr
 
@@ -386,15 +393,16 @@ def main():
         except AssertionError as e:
             print(f"FAIL {name}: {e}")
             sys.exit(1)
-    if os.path.exists(os.path.join(ROOT, "build", "tests", name + "_ref.sna")):
-        ref = Run(name + "_ref", png=False)
-        a, b = r.shown(), ref.shown()
-        if a != b:
-            bad = [i for i in range(0x4000) if a[i] != b[i]]
-            lines = sorted({(i % 0x800) // 80 * 8 + i // 0x800 for i in bad if i % 0x800 < 2000})
-            print(f"FAIL {name}: screen differs from the full-redraw reference in {len(bad)} "
-                  f"bytes, lines {lines[:12]}{'...' if len(lines) > 12 else ''}")
-            sys.exit(1)
+    if not r.byte("test_view"):
+        return                      # ended on a menu page
+    a, b = r.shown(), r.hidden()
+    line = lambda i: (i % 0x800) // 80 * 8 + i // 0x800            # noqa: E731
+    bad = [i for i in range(0x4000) if i % 0x800 < 2000 and line(i) < VIEW_LINES and a[i] != b[i]]
+    if bad:
+        lines = sorted({line(i) for i in bad})
+        print(f"FAIL {name}: screen differs from the full-redraw reference in {len(bad)} "
+              f"bytes, lines {lines[:12]}{'...' if len(lines) > 12 else ''}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

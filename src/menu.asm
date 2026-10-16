@@ -306,6 +306,8 @@ page_wait_fire:
   call kbd_scan
   call joy_read
   if TEST
+  xor a                         ; a script ending here has no view to check
+  ld (test_view),a
   call test_input
   endif
   ld hl,(page_hook)             ; page-specific keys (the menu's)

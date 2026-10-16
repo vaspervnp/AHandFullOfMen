@@ -17,6 +17,7 @@ m01_desc:
   dw m01_txt_name, m01_txt_brief, m01_txt_hud1, m01_txt_hud2, m01_txt_obj
   db M01_GUARDS
   dw m01_briefing
+  db MAP01_BANK
 m01_ruin:                       ; the tower: top half snow, base rubble
   db TILE_SNOW, TILE_SNOW, TILE_SNOW, TILE_SNOW
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH

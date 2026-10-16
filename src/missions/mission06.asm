@@ -17,6 +17,7 @@ m06_desc:
   dw m06_txt_name, m06_txt_brief, m06_txt_hud1, m06_txt_hud2, m06_txt_obj
   db M06_GUARDS
   dw m06_briefing
+  db MAP06_BANK
 m06_ruin:                       ; the plant in ruins
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE, TILE_RUBBLE
   db TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE

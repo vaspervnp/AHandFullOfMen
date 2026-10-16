@@ -182,7 +182,7 @@ tests/                   scripted-input scenarios + assertions
 | --- | --- |
 | `&0040-&3EFF` | code, tables, variables |
 | `&3F00-&3FFF` | stack (measured depth is about 30 bytes; tests check a canary) |
-| `&4000-&7FFF` | tiles, font, portraits, texts, the current mission's block, live map, path grids, render caches. Paged over by bank 4 (Green Beret, guard, cursor, effects), 5 (Marine, Sniper, menu music) or 6 (Sapper, Spy) while blitting, and by bank 7 (title banner, mission maps and blocks) when the menu or a mission loads |
+| `&4000-&7FFF` | tiles, font, portraits, texts, the current mission's block, live map, path grids, render caches. Paged over by bank 4 (Green Beret, guard, cursor, effects), 5 (Marine, Sniper, menu music, packed maps 5-6) or 6 (Sapper, Spy, packed maps 1-4) while blitting, and by bank 7 (title banner, mission blocks) when the menu or a mission loads |
 | `&8000-&BFFF` | screen buffer B |
 | `&C000-&FFFF` | screen buffer A |
 
@@ -217,7 +217,9 @@ sheets it writes are committed, so `./build.sh` doesn't need either tool.
    with 2:1 pixel ratio, saving an editable copy (`assets/aseprite/<sheet>.aseprite`)
    next to the PNG it exports.
 5. **`tools/png2cpc.py`** (run by the build) encodes Mode 0 bytes and masks.
-   `tools/map2asm.py` converts `assets/maps/*.txt`.
+   `tools/map2asm.py` converts `assets/maps/*.txt` and packs each map with
+   a small LZ coder (7.7 KB of maps become 2.5 KB). Snow specks aren't
+   stored: the game scatters them over the snow when a map loads.
 
 ### Music
 
@@ -237,9 +239,9 @@ is the full game with scripted joystick input (a `SCENARIO` macro) that
 jumps to `&0000` when the script ends. Each scenario runs twice:
 
 - in `tools/cpcsim.py`, a small Python CPC simulator, where `tests/check.py`
-  asserts on RAM. It also compares the final screen against the same
-  scenario built with `REF_RENDER=1`, which redraws everything every frame,
-  and checks the stack canary.
+  asserts on RAM. At the end the test build also redraws the whole view
+  of that same moment into the hidden buffer; the play area on show must
+  match it byte for byte. It also checks the stack canary.
 - in Caprice32 (`tools/cpcemu`, headless), which takes a screenshot
 
 The disk image is also booted with `RUN"DISC` and screenshotted.

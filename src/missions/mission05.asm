@@ -16,6 +16,7 @@ m05_desc:
   dw m05_txt_name, m05_txt_brief, m05_txt_hud1, m05_txt_hud2, m05_txt_obj
   db M05_GUARDS
   dw m05_briefing
+  db MAP05_BANK
 m05_ruin:                       ; a burnt-out pit
   db TILE_SNOW, TILE_RUBBLE, TILE_SCORCH, TILE_SNOW
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH

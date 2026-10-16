@@ -60,28 +60,9 @@ mission_load:
   ld (cam_x),a
   ld a,c
   ld (cam_y),a
-  ex de,hl                      ; map source (bank 7) -> map_buf, a row
-  ld de,map_buf                 ; at a time through the bounce buffer
-  ld a,MAP_H
-.map:
-  push af
-  ld bc,&7F00+RAM_BANK7
-  out (c),c
-  push de
-  ld de,bounce
-  ld bc,MAP_W
-  ldir
-  pop de
-  ld bc,&7F00+RAM_BASE64
-  out (c),c
-  push hl
-  ld hl,bounce
-  ld bc,MAP_W
-  ldir
-  pop hl
-  pop af
-  dec a
-  jr nz,.map
+  ex de,hl                      ; packed map -> map_buf
+  ld a,(mis+MIS_MAP_BANK)
+  call map_unpack
   ; clear entity table
   ld hl,ent_table
   ld de,ent_table+1
@@ -310,3 +291,112 @@ clock_update:
   ret nz
   ld a,END_REINFORCED
   jr end_fail
+
+; ---------------------------------------------------------------------------
+; HL = packed map (format: tools/map2asm.py) in RAM config A -> map_buf.
+; The source bank is paged in for each byte read; matches copy within
+; map_buf. Then snow specks and shading are scattered over the plain snow.
+; ---------------------------------------------------------------------------
+MAP_MIN_MATCH   equ 4
+
+map_unpack:
+  ld (mu_port),a
+  ld a,&7F
+  ld (mu_port+1),a
+  ld de,map_buf
+.token:
+  call mu_byte
+  bit 7,a
+  jr nz,.match
+  inc a                         ; &00-&7F: A+1 literal tiles
+  ld b,a
+.lit:
+  call mu_byte
+  ld (de),a
+  inc de
+  djnz .lit
+  jr .more
+.match:
+  and &7F                       ; &80-&FF: copy from earlier output
+  add a,MAP_MIN_MATCH
+  ld (mu_len),a
+  call mu_byte
+  ld c,a
+  call mu_byte
+  ld b,a                        ; BC = distance back
+  push hl
+  ld h,d
+  ld l,e
+  or a
+  sbc hl,bc
+  ld a,(mu_len)
+  ld c,a
+  ld b,0
+  ldir                          ; overlapping copies repeat, as intended
+  pop hl
+.more:
+  ld a,e
+  cp (map_buf+MAP_W*MAP_H) and &FF
+  jr nz,.token
+  ld a,d
+  cp (map_buf+MAP_W*MAP_H)>>8
+  jr nz,.token
+  ; specks and shading: about 1 snow tile in 10, the same every load
+  ld hl,&ACE1
+  ld (mu_seed),hl
+  ld hl,map_buf
+  ld bc,MAP_W*MAP_H
+.snow:
+  ld a,(hl)
+  or a                          ; TILE_SNOW
+  jr nz,.next
+  push hl
+  call mu_rand
+  pop hl
+  cp 13
+  jr c,.speck
+  cp 26
+  jr nc,.next
+  ld (hl),2                     ; snow_shade
+  jr .next
+.speck:
+  ld (hl),1                     ; snow_speck
+.next:
+  inc hl
+  dec bc
+  ld a,b
+  or c
+  jr nz,.snow
+  ret
+
+; -> A = (HL), HL+1, read from the map's RAM bank (base RAM paged back)
+mu_byte:
+  push bc
+  ld bc,(mu_port)
+  out (c),c
+  ld a,(hl)
+  inc hl
+  ld c,RAM_BASE64
+  out (c),c
+  pop bc
+  ret
+
+; -> A = next byte of the speck generator (xorshift 7/9/8)
+mu_rand:
+  ld hl,(mu_seed)
+  ld a,h
+  rra
+  ld a,l
+  rra
+  xor h
+  ld h,a
+  ld a,l
+  rra
+  ld a,h
+  rra
+  xor l
+  ld l,a
+  xor h
+  ld h,a
+  ld (mu_seed),hl
+  ret

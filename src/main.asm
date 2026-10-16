@@ -20,9 +20,6 @@
   ifndef TEST
 TEST equ 0
   endif
-  ifndef REF_RENDER
-REF_RENDER equ 0                ; tests: full redraw every frame (reference)
-  endif
   ifndef FUZZ
 FUZZ equ 0                      ; tests/fuzz.py: random input instead of a script
   endif
@@ -94,6 +91,8 @@ main_loop:
   call kbd_scan
   call joy_read
   if TEST
+  ld a,1
+  ld (test_view),a
   call test_input
   endif
   ld a,KEY_ESC
@@ -224,10 +223,24 @@ frame_hist: ds 8
 ; Script over. A vision cone cast still in progress shows a mix of old and
 ; new dots on tiles restored meanwhile (by design: one cone buffer), which
 ; the full-redraw reference would draw differently, so let it finish.
+; Then redraw the whole view of this same moment into the hidden buffer:
+; tests/check.py compares it with the incrementally drawn screen on show.
 test_done:
   ld a,(cone_pending)
   or a
   ret nz
+  ld a,(test_view)              ; ended on a menu page: nothing to redraw
+  or a
+  jr z,test_end
+  ld a,(view_dirty)             ; (tests/check.py reads it afterwards)
+  push af
+  ld a,3
+  ld (view_dirty),a
+.ref:
+  call render_frame             ; REDRAW_SLICE rows a call, then the items
+  jr nc,.ref
+  pop af
+  ld (view_dirty),a
 ; End of script: copy a marker + frame_hist onto line 0 of both screens so
 ; tests/frames.py can read it back from a Caprice32 screenshot, then stop.
 test_end:
@@ -248,6 +261,7 @@ test_end:
   ldir
   ret
 test_ptr: dw test_script
+test_view: db 0                 ; 1 while the script runs in a mission
 test_count: db 0
 
   if FUZZ
@@ -454,7 +468,10 @@ ce_ptr:         dw 0
 render_serial:  db 0
 hp_idx:         db 0
 hp_role:        db 0
-bounce:         defs MAP_W         ; mission_load copies maps out of bank 7
+bounce:         defs MAP_W         ; mission_select copies blocks out of bank 7
+mu_port:        dw 0            ; map_unpack: &7F00 + the map's RAM config
+mu_len:         db 0
+mu_seed:        dw 0
 hp_x:           db 0
 hp_frame:       db 0
 hp_hp:          db 0
@@ -578,13 +595,17 @@ sprites_end:
   endif
 
 ; ---------------------------------------------------------------------------
-; RAM bank 5 (paged at &4000): Marine and Sniper sheets
+; RAM bank 5 (paged at &4000): Marine and Sniper sheets, music, maps 5-6
 ; ---------------------------------------------------------------------------
   bank 5
   org &4000
 sprites2_start:
   include "sprites2.asm"        ; generated: build/sprites2.asm
   include "music.asm"           ; generated: build/music.asm (menu songs)
+MAP05_BANK      equ RAM_BANK5   ; packed maps (tools/map2asm.py)
+MAP06_BANK      equ RAM_BANK5
+  include "mission05_map.asm"   ; generated: build/mission05_map.asm
+  include "mission06_map.asm"   ; generated: build/mission06_map.asm
 sprites2_end:
   assert sprites2_end<=&8000
 
@@ -593,12 +614,20 @@ sprites2_end:
   endif
 
 ; ---------------------------------------------------------------------------
-; RAM bank 6 (paged at &4000): Sapper and Spy sheets
+; RAM bank 6 (paged at &4000): Sapper and Spy sheets, maps 1-4
 ; ---------------------------------------------------------------------------
   bank 6
   org &4000
 sprites3_start:
   include "sprites3.asm"        ; generated: build/sprites3.asm
+MAP01_BANK      equ RAM_BANK6   ; packed maps (tools/map2asm.py)
+MAP02_BANK      equ RAM_BANK6
+MAP03_BANK      equ RAM_BANK6
+MAP04_BANK      equ RAM_BANK6
+  include "mission01_map.asm"   ; generated: build/mission01_map.asm
+  include "mission02_map.asm"   ; generated: build/mission02_map.asm
+  include "mission03_map.asm"   ; generated: build/mission03_map.asm
+  include "mission04_map.asm"   ; generated: build/mission04_map.asm
 sprites3_end:
   assert sprites3_end<=&8000
 
@@ -607,18 +636,12 @@ sprites3_end:
   endif
 
 ; ---------------------------------------------------------------------------
-; RAM bank 7 (paged at &4000 when needed): title art, mission maps and data
+; RAM bank 7 (paged at &4000 when needed): title art, mission blocks
 ; ---------------------------------------------------------------------------
   bank 7
   org &4000
 bank7_start:
   include "bank7_gfx.asm"       ; generated: build/bank7_gfx.asm (title_gfx)
-  include "mission01_map.asm"   ; generated: build/mission01_map.asm
-  include "mission02_map.asm"   ; generated: build/mission02_map.asm
-  include "mission03_map.asm"   ; generated: build/mission03_map.asm
-  include "mission04_map.asm"   ; generated: build/mission04_map.asm
-  include "mission05_map.asm"   ; generated: build/mission05_map.asm
-  include "mission06_map.asm"   ; generated: build/mission06_map.asm
 mis_phys_1:                    ; mission 1, assembled for mis_buf
   org mis_buf,mis_phys_1
   include "missions/mission01.asm"

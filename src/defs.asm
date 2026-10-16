@@ -14,8 +14,9 @@ CRTC_DATA       equ &BD
 GA_MODE0_NOROM  equ &8C         ; mode 0, upper+lower ROM disabled
 RAM_BASE64      equ &C0         ; default 64K bank configuration
 RAM_SPRITES     equ &C4         ; bank 4 at &4000 (beret, guard, cursor, fx)
-RAM_BANK6       equ &C6         ; bank 6 at &4000 (Sapper, Spy)
-RAM_BANK7       equ &C7         ; bank 7 at &4000 (title art, mission maps)
+RAM_BANK5       equ &C5         ; bank 5 at &4000 (Marine, Sniper, music, maps 5-6)
+RAM_BANK6       equ &C6         ; bank 6 at &4000 (Sapper, Spy, maps 1-4)
+RAM_BANK7       equ &C7         ; bank 7 at &4000 (title art, mission blocks)
 
 ; --- Screen layout ----------------------------------------------------------
 SCREEN          equ &C000
@@ -164,7 +165,7 @@ KEY_JFIRE1      equ &95
 ; Mission descriptor (src/missions/missions.asm)
 ; descriptor fields (MIS_SIZE bytes)
 MIS_SPAWNS      equ 0           ; spawn records (dw)
-MIS_MAP         equ 2           ; map tiles in RAM bank 7 (dw)
+MIS_MAP         equ 2           ; packed map tiles (dw), in RAM bank MIS_MAP_BANK
 MIS_CAM_X       equ 4
 MIS_CAM_Y       equ 5
 MIS_TGT_COL     equ 6           ; the structure a blast destroys: tiles
@@ -185,4 +186,5 @@ MIS_TXT_HUD2    equ 24
 MIS_TXT_OBJ     equ 26          ; debrief checklist line, 26 chars (dw)
 MIS_GUARDS      equ 28          ; sentries, for the debrief tally
 MIS_BRIEFING    equ 29          ; briefing page lines (dw, page_lines format)
-MIS_SIZE        equ 31
+MIS_MAP_BANK    equ 31          ; RAM config that pages in the packed map
+MIS_SIZE        equ 32

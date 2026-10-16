@@ -16,6 +16,7 @@ m03_desc:
   dw m03_txt_name, m03_txt_brief, m03_txt_hud1, m03_txt_hud2, m03_txt_obj
   db M03_GUARDS
   dw m03_briefing
+  db MAP03_BANK
 m03_ruin:                       ; she sinks
   ds 16*6,TILE_WATER
 m03_txt_name:  db "MISSION 3: ROUGH WATERS",0

@@ -16,6 +16,7 @@ m02_desc:
   dw m02_txt_name, m02_txt_brief, m02_txt_hud1, m02_txt_hud2, m02_txt_obj
   db M02_GUARDS
   dw m02_briefing
+  db MAP02_BANK
 m02_ruin:                       ; burnt-out tanks
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE
   db TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH
