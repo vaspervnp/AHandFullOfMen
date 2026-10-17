@@ -22,8 +22,8 @@ from sheetlib import BLK, BRED, BYEL, PYEL, RED, SKIN, WHT, Canvas, crop, from_p
 from tiles_def import SHEET_COLS, STAMP_GROUND, STAMPS, TILE_NAMES  # noqa: E402
 
 
-def render_canvas(path, priority=()):
-    rows = pixelize(path, priority=priority)
+def render_canvas(path, priority=(), pcover=None):
+    rows = pixelize(path, priority=priority, pcover=pcover)
     cv = Canvas(len(rows[0]), len(rows))
     for y, row in enumerate(rows):
         cv.px[y] = list(row)
@@ -44,9 +44,8 @@ def tiles_sheet(terrain_png, renders):
         tiles.append(c if any(p is not None for row in c.px for p in row)
                      else cell(TILE_NAMES.index(ground[i])))
     for name, (first, w, h) in STAMPS.items():
-        art = render_canvas(os.path.join(renders, name, name + ".png"), priority=(BYEL, BRED))
-        if name != "tower":                       # the lattice is drawn in black already
-            art.outline(BLK)
+        art = render_canvas(os.path.join(renders, name, name + ".png"), priority=(BLK, BYEL, BRED), pcover=4)
+        art.outline(BLK)                          # (black first: keeps the little eyes)
         base = TILE_NAMES.index(first)
         for ty in range(h):
             for tx in range(w):
@@ -63,7 +62,7 @@ def fx_sheet(renders):
     cells = []
     for name, sub in (("barrel", "barrel"), ("frame1", "explosion"), ("frame2", "explosion"),
                       ("frame3", "explosion"), ("trap", "trap"), ("bomb", "bomb")):
-        cv = render_canvas(os.path.join(renders, sub, name + ".png"), priority=(BYEL, PYEL))
+        cv = render_canvas(os.path.join(renders, sub, name + ".png"), priority=(BLK, BYEL, PYEL), pcover=4)
         cv.outline(BLK)
         cells.append(cv)
     return cells

@@ -22,9 +22,11 @@ def nearest_pen(rgb):
     return min(range(16), key=lambda i: sum((a - b) ** 2 for a, b in zip(rgb, GAME_RGB[i])))
 
 
-def pixelize(path, bw=8, bh=4, cover=6, priority=()):
+def pixelize(path, bw=8, bh=4, cover=6, priority=(), pcover=None):
     """-> rows of pen numbers / None. `priority` pens win a block whenever
-    they reach `cover` pixels (keeps faces and gun barrels visible)."""
+    they reach `pcover` pixels (default `cover`; keeps faces and gun barrels
+    visible)."""
+    pcover = cover if pcover is None else pcover
     img = Image.open(path).convert("RGBA")
     w, h = img.width // bw, img.height // bh
     px = img.load()
@@ -47,7 +49,7 @@ def pixelize(path, bw=8, bh=4, cover=6, priority=()):
                 pens[nearest_pen(rgb)] += n
             pick = None
             for p in priority:
-                if pens.get(p, 0) >= cover:
+                if pens.get(p, 0) >= pcover:
                     pick = p
                     break
             row.append(pick if pick is not None else pens.most_common(1)[0][0])

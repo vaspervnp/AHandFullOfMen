@@ -51,6 +51,9 @@
 - `tools/render_assets.sh`: Blender 5.2 (Windows, through WSL interop, with
   `\\wsl.localhost\...` paths), then renders2sheet, then the Aseprite batch
   run (built from source; path in the script).
+- Props: `frame_camera` moves each prop back until its front is at y = 0
+  (the frame's bottom edge) and shrinks it to fit. `cute_face` needs
+  s >= 2.5 or so to survive pixelization (one Mode 0 pixel is ~0.23 units).
 - The Blender MCP calls time out unless Blender is open with the add-on.
   The headless CLI does the same job reproducibly.
 - In Aseprite's indexed conversion, transparent pixels land on index 0

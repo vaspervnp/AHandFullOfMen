@@ -309,28 +309,18 @@ def render_character(subject, out_dir, blend_dir):
 # Radio tower (2x4 tiles = 16x32 Mode 0 pixels = 32x32 visual units)
 # ---------------------------------------------------------------------------
 
-def build_tower(sc):
-    h = 6.5
-    base = 1.7
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            top = Vector((sx * 0.25, sy * 0.25, h))
-            bot = Vector((sx * base, sy * base, 0))
-            d = top - bot
-            ob = cyl("leg", 0.13, d.length, (top + bot) / 2, "black", verts=4)
-            ob.rotation_mode = "QUATERNION"
-            ob.rotation_quaternion = d.to_track_quat("Z", "Y")
-    for i in range(1, 5):
-        z = i * h / 5
-        w = base * (1 - z / h) + 0.25
-        colour = "bred" if i % 2 else "grey"      # white would vanish on snow
-        for (a, b) in (((-w, -w), (w, -w)), ((-w, w), (w, w)), ((-w, -w), (-w, w)), ((w, -w), (w, w))):
-            p, q = Vector((*a, z)), Vector((*b, z))
-            ob = cyl("rung", 0.12, (q - p).length, (p + q) / 2, colour, verts=4)
-            ob.rotation_mode = "QUATERNION"
-            ob.rotation_quaternion = (q - p).to_track_quat("Z", "Y")
-    cyl("mast", 0.1, 1.0, (0, 0, h + 0.5), "bred", verts=4)
-    sphere("beacon", 0.25, (0, 0, h + 1.0), "byel")
+def build_tower(sc):                              # candy-striped mast, 2x4 tiles
+    cyl("base", 1.0, 0.8, (0, 0, 0.4), "grey", verts=16)
+    sphere("base_top", 1.0, (0, 0, 0.8), "grey", scale=(1, 1, 0.3))
+    cute_face(0, -0.99, 0.55, 6.0)
+    h0, seg = 0.9, 0.82
+    for i in range(6):                               # red and cream stripes
+        cyl("stripe", 0.3, seg, (0, 0, h0 + seg * (i + 0.5)), "bred" if i % 2 == 0 else "pyel", verts=12)
+    top = h0 + seg * 6
+    sphere("ball", 0.5, (0, 0, top + 0.35), "byel")
+    sphere("shine", 0.13, (-0.18, -0.4, top + 0.5), "white")
+    cyl("aerial", 0.06, 0.7, (0, 0, top + 1.1), "grey", verts=6)
+    sphere("tip", 0.14, (0, 0, top + 1.5), "bred")
     add_camera(sc, ortho_scale=6.6, target_z=3.3)
     sc.render.resolution_x, sc.render.resolution_y = TOWER_RES
 
@@ -339,103 +329,143 @@ def build_tower(sc):
 # Props. Sizes are chosen so 1 visual unit = UNIT Blender units everywhere.
 # ---------------------------------------------------------------------------
 
+def cute_face(cx, cy, cz, s=1.0):
+    """Kawaii face on a surface that faces the camera (-Y): shiny eyes,
+    blush and a little mouth, centred at (cx, cy, cz), scaled by s. One
+    Mode 0 pixel is about 0.23 units wide, so props need s >= 2.5 or so."""
+    cy -= 0.03 * s                                   # stand proud of the surface
+    for ex in (-1, 1):
+        x = cx + ex * 0.13 * s
+        sphere("eye", 0.07 * s, (x, cy, cz), "black", scale=(0.8, 0.5, 1.3))
+        sphere("shine", 0.025 * s, (x + 0.02 * s, cy - 0.04 * s, cz + 0.05 * s), "white")
+        sphere("blush", 0.05 * s, (cx + ex * 0.25 * s, cy + 0.01 * s, cz - 0.1 * s), "bred",
+               scale=(1.1, 0.35, 0.6))
+    sphere("mouth", 0.03 * s, (cx, cy - 0.01 * s, cz - 0.12 * s), "red", scale=(1.4, 0.5, 0.8))
+
+
 def frame_camera(sc, px_w, px_h):
-    """Camera + resolution for a px_w x px_h Mode 0 image, ground at bottom."""
+    """Camera + resolution for a px_w x px_h Mode 0 image, ground at bottom.
+    The frame's bottom edge is the ground at y = 0, so anything nearer the
+    camera would be cut off: the whole prop moves back until its front is
+    at y = 0 (that's where the faces are)."""
+    bpy.context.view_layer.update()
+    front = min((ob.matrix_world @ Vector(c)).y
+                for ob in sc.objects if ob.type == "MESH" for c in ob.bound_box)
+    tops = [ob for ob in sc.objects if ob.parent is None and ob.type in ("MESH", "EMPTY")]
+    if front < 0:
+        for ob in tops:
+            ob.location.y -= front
+    # ... and shrinks, about the origin, until it fits the frame
+    el = math.radians(CAM_ELEVATION)
+    bpy.context.view_layer.update()
+    pts = [ob.matrix_world @ Vector(c) for ob in sc.objects if ob.type == "MESH" for c in ob.bound_box]
+    high = max(p.y * math.sin(el) + p.z * math.cos(el) for p in pts)
+    wide = max(abs(p.x) for p in pts)
+    fit = min(1.0, px_h * UNIT * 0.97 / high, px_w * UNIT * 0.97 / wide)
+    if fit < 1.0:
+        for ob in tops:
+            ob.location *= fit
+            ob.scale *= fit
     vis_w, vis_h = px_w * 2, px_h
     add_camera(sc, ortho_scale=vis_w * UNIT, target_z=ground_target(vis_h * UNIT))
     sc.render.resolution_x, sc.render.resolution_y = px_w * 8, px_h * 4
 
 
-def build_pine(sc):                               # 2x3 tiles: 16x24 Mode 0 px
-    cyl("trunk", 0.15, 0.8, (0, 0, 0.4), "red", verts=6)
-    for i, (z, r) in enumerate(((0.6, 0.95), (1.45, 0.75), (2.25, 0.52))):
-        bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=r, depth=1.35, location=(0, 0, z + 0.67))
-        cone = bpy.context.active_object
-        cone.data.materials.append(mat("green" if i != 1 else "teal"))
-        bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=r * 0.5, radius2=0, depth=0.55,
-                                        location=(0, 0, z + 1.2))
-        cap = bpy.context.active_object                  # snow on the bough
-        cap.data.materials.append(mat("white"))
+def build_pine(sc):                               # 2x3 tiles: 16x24 Mode 0 px, fluffy tree
+    cyl("trunk", 0.22, 0.5, (0, 0, 0.25), "red", verts=8)
+    for i, (z, r) in enumerate(((0.95, 0.85), (1.85, 0.68), (2.6, 0.5))):
+        sphere("puff", r, (0, 0, z), "green" if i != 1 else "teal")
+        sphere("snow", r * 0.75, (0, 0.05, z + r * 0.62), "white", scale=(1, 1, 0.4))
+    cute_face(0, -0.68, 1.42, 3.2)              # upper front: faces the camera
     frame_camera(sc, 16, 24)
 
 
-def build_rock(sc):                               # 1 tile: 8x8 Mode 0 px
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=0.5, location=(0, 0, 0.18))
-    rock = bpy.context.active_object
-    rock.scale = (1.0, 0.8, 0.5)
-    rock.data.materials.append(mat("grey"))
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=0.36, location=(-0.08, 0.05, 0.32))
-    snow = bpy.context.active_object
-    snow.scale = (1.0, 0.8, 0.35)
-    snow.data.materials.append(mat("white"))
+def build_rock(sc):                               # 1 tile: 8x8 Mode 0 px, a round pebble
+    sphere("rock", 0.6, (0, 0, 0.3), "grey", scale=(1.0, 0.85, 0.6))
+    sphere("snow", 0.44, (-0.05, 0.05, 0.53), "white", scale=(1.0, 0.85, 0.35))
+    for ex in (-0.2, 0.2):
+        sphere("eye", 0.13, (ex, -0.5, 0.26), "black", scale=(0.9, 0.5, 1.0))
     frame_camera(sc, 8, 8)
 
 
-def build_barrel(sc):                             # in a 12x16 sprite cell
-    cyl("barrel", 0.26, 0.8, (0, 0, 0.4), "bred", verts=10)
-    for z in (0.15, 0.65):
-        cyl("band", 0.27, 0.07, (0, 0, z), "byel", verts=10)
-    cyl("lid", 0.22, 0.02, (0, 0, 0.81), "orange", verts=10)
+def build_barrel(sc):                             # in a 12x16 sprite cell, a chubby barrel
+    cyl("barrel", 0.42, 0.62, (0, 0, 0.36), "bred", verts=14)
+    sphere("top", 0.42, (0, 0, 0.67), "orange", scale=(1, 1, 0.3))
+    sphere("bottom", 0.42, (0, 0, 0.06), "bred", scale=(1, 1, 0.2))
+    for z in (0.12, 0.62):
+        cyl("band", 0.43, 0.06, (0, 0, z), "byel", verts=14)
+    cute_face(0, -0.42, 0.48, 2.6)
     frame_camera(sc, 12, 16)
 
 
-def build_explosion(sc):                          # 3 frames in 12x16 cells
-    groups = []
+def build_explosion(sc):                          # 3 frames in 12x16 cells: puffy cartoon clouds
+    puffs = ((-0.55, 0.0), (0.55, 0.0), (0.0, 0.0), (-0.3, 0.45), (0.3, 0.45), (0.0, 0.75))
     for f, (r, core, mid, outer) in enumerate(((0.35, "byel", "orange", "bred"),
                                                (0.6, "pyel", "byel", "orange"),
                                                (0.8, "orange", "bred", "grey"))):
         coll = bpy.data.collections.new(f"frame{f + 1}")
         sc.collection.children.link(coll)
-        for rad, colour, z in ((r, outer, r), (r * 0.75, mid, r * 1.05), (r * 0.45, core, r * 1.1)):
-            ob = sphere(f"ball{f}", rad, (0, -(r - rad) * 1.4, z), colour)   # hotter layers in front
+        obs = []
+        for dx, dz in puffs:                             # the cloud: round puffs
+            obs.append(sphere(f"puff{f}", r * 0.55, (dx * r, 0.1, r * 0.6 + dz * r), outer))
+        obs.append(sphere(f"mid{f}", r * 0.6, (0, -r * 0.35, r * 0.85), mid))
+        obs.append(sphere(f"core{f}", r * 0.35, (0, -r * 0.7, r * 0.9), core))
+        if f < 2:                                        # sparkles
+            for dx, dz in ((-1.1, 1.4), (1.1, 1.2), (0.0, 1.8)):
+                obs.append(sphere("spark", 0.1, (dx * r, -0.4, dz * r), "byel"))
+        else:                                            # smoke puffs drifting up
+            for dx, dz in ((-0.4, 1.4), (0.35, 1.55), (0.0, 1.8)):
+                obs.append(sphere("smoke", 0.3, (dx, 0.1, dz), "grey"))
+        for ob in obs:
             for c in ob.users_collection:
                 c.objects.unlink(ob)
             coll.objects.link(ob)
-        if f == 2:                                       # smoke puffs
-            for dx, dz in ((-0.4, 1.3), (0.35, 1.45), (0.0, 1.7)):
-                ob = sphere("smoke", 0.3, (dx, 0.1, dz), "grey")
-                for c in ob.users_collection:
-                    c.objects.unlink(ob)
-                coll.objects.link(ob)
-        groups.append(coll)
     frame_camera(sc, 12, 16)
 
 
-def build_truck(sc):                              # 3x2 tiles: 24x16 Mode 0 px, faces west
-    box("chassis", (4.4, 1.5, 0.25), (0.1, 0, 0.42), "black")
-    box("cab", (1.1, 1.5, 0.95), (-1.55, 0, 0.98), "olive")
-    box("screen", (0.05, 1.2, 0.4), (-2.11, 0, 1.15), "sky")
-    box("cover", (3.0, 1.55, 1.25), (0.75, 0, 1.15), "olive")
-    for x in (-0.4, 0.4, 1.2, 1.9):
-        box("rib", (0.08, 1.58, 1.28), (x, 0, 1.15), "grey")
-    for x in (-1.5, 0.9, 1.7):
-        for y in (-0.75, 0.75):
-            cyl("wheel", 0.33, 0.25, (x, y, 0.33), "black", verts=10, rot=(math.radians(90), 0, 0))
+def build_truck(sc):                              # 3x2 tiles: 24x16 Mode 0 px, faces west, chubby
+    box("chassis", (4.2, 1.4, 0.25), (0.1, 0, 0.45), "black")
+    box("cab", (1.2, 1.5, 0.8), (-1.45, 0, 0.95), "olive")
+    sphere("cab_top", 0.75, (-1.45, 0, 1.3), "olive", scale=(0.85, 1.0, 0.55))
+    sphere("screen", 0.42, (-1.95, 0, 1.25), "sky", scale=(0.4, 1.4, 0.6))
+    cyl("cover", 0.78, 2.8, (0.75, 0, 1.0), "olive", verts=14, rot=(0, math.radians(90), 0))
+    box("cover_base", (2.8, 1.56, 0.4), (0.75, 0, 0.8), "olive")
+    for x in (0.0, 0.75, 1.5):
+        cyl("rib", 0.8, 0.07, (x, 0, 1.0), "teal", verts=14, rot=(0, math.radians(90), 0))
+    cute_face(-1.45, -0.76, 0.98, 2.8)
+    sphere("lamp", 0.16, (-2.05, -0.55, 0.75), "byel")
+    for x in (-1.5, 0.6, 1.5):                       # big round wheels
+        for y in (-0.72, 0.72):
+            cyl("wheel", 0.4, 0.28, (x, y, 0.4), "black", verts=12, rot=(math.radians(90), 0, 0))
+            cyl("hub", 0.16, 0.3, (x, y, 0.4), "grey", verts=8, rot=(math.radians(90), 0, 0))
     frame_camera(sc, 24, 16)
 
 
-def build_depot(sc):                              # 3x2 tiles: 24x16 Mode 0 px
-    for y in (-0.55, 0.55):                          # two fuel tanks on cradles
-        cyl("tank", 0.5, 3.6, (0, y, 0.75), "grey", verts=12, rot=(0, math.radians(90), 0))
-        cyl("stripe", 0.51, 0.3, (0, y, 0.75), "bred", verts=12, rot=(0, math.radians(90), 0))
-        for x in (-1.2, 1.2):
-            box("cradle", (0.2, 0.9, 0.3), (x, y, 0.15), "black")
-    box("pipe", (0.12, 1.5, 0.12), (1.4, 0, 1.25), "black")
-    box("valve", (0.25, 0.25, 0.25), (1.4, 0, 1.4), "byel")
+def build_depot(sc):                              # 3x2 tiles: 24x16 Mode 0 px, two round tanks
+    for y in (0.55, -0.55):                          # back tank first, the face on the front one
+        cyl("tank", 0.5, 2.6, (0, y, 0.75), "grey", verts=14, rot=(0, math.radians(90), 0))
+        for x in (-1.3, 1.3):
+            sphere("end", 0.5, (x, y, 0.75), "grey", scale=(0.5, 1, 1))
+            sphere("foot", 0.22, (x * 0.8, y, 0.18), "black", scale=(1, 2, 0.8))
+        cyl("stripe", 0.51, 0.3, (0.75, y, 0.75), "bred", verts=14, rot=(0, math.radians(90), 0))
+    cute_face(-0.3, -0.95, 1.05, 3.4)          # upper front of the front tank
+    cyl("pipe", 0.07, 1.4, (1.3, 0, 1.3), "black", verts=6, rot=(math.radians(90), 0, 0))
+    sphere("valve", 0.17, (1.3, 0, 1.45), "byel")
     frame_camera(sc, 24, 16)
 
 
-def build_uboat(sc):                              # 16x6 tiles: 128x48 Mode 0 px, bow east
-    cyl("hull", 0.55, 5.6, (0, 0, 0.3), "grey", verts=12, rot=(0, math.radians(90), 0))
-    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.55, depth=0.9,
-                                    location=(3.25, 0, 0.3), rotation=(0, math.radians(90), 0))
-    bpy.context.active_object.data.materials.append(mat("grey"))
-    box("deck", (4.6, 0.5, 0.12), (0, 0, 0.82), "black")
-    box("tower", (1.1, 0.5, 0.75), (-0.3, 0, 1.25), "grey")
-    box("bridge", (0.7, 0.55, 0.12), (-0.25, 0, 1.68), "black")
-    box("periscope", (0.06, 0.06, 0.6), (-0.1, 0, 2.0), "black")
-    box("gun", (0.6, 0.08, 0.08), (1.1, 0, 1.0), "black")
-    box("number", (0.5, 0.52, 0.2), (-0.3, 0, 1.15), "white")
+def build_uboat(sc):                              # 16x6 tiles: 128x48 Mode 0 px, bow east, chubby
+    sphere("hull", 1.0, (0, 0, 0.3), "grey", scale=(3.1, 0.58, 0.58))
+    box("deck", (4.4, 0.36, 0.1), (0, 0, 0.86), "black")
+    cyl("tower", 0.38, 0.6, (-0.3, 0, 1.15), "grey", verts=12)
+    sphere("tower_top", 0.38, (-0.3, 0, 1.45), "grey", scale=(1, 1, 0.45))
+    box("number", (0.5, 0.05, 0.18), (-0.3, -0.39, 1.12), "white")
+    cyl("periscope", 0.04, 0.5, (-0.15, 0, 1.85), "black", verts=6)
+    sphere("lens", 0.07, (-0.15, -0.03, 2.1), "byel")
+    for x in (-1.9, -1.2, 0.6, 1.2):                 # portholes
+        sphere("porthole", 0.09, (x, -0.55 * (1 - (x / 3.1) ** 2) ** 0.5, 0.4), "white",
+               scale=(1, 0.5, 1))
+    cute_face(2.0, -0.43, 0.42, 1.3)
     bpy.ops.object.empty_add(location=(0, 0, 0))     # modelled at 4x2 tiles:
     rig = bpy.context.active_object                  # 4x as long, 3x as wide/tall
     for ob in sc.objects:
@@ -458,6 +488,7 @@ def build_railbridge(sc):                             # 4x3 tiles: 32x24 Mode 0 
         for i in range(5):
             y = 0.1 + i * (deck_d - 0.2) / 4
             box("post", (0.3, 0.16, 0.42), (x, y, 0.43), "grey")
+            sphere("cap", 0.16, (x, y, 0.72), "byel")
             if i < 4:
                 ob = box("brace", (0.14, 1.1, 0.1), (x, y + (deck_d - 0.2) / 8, 0.43), "black")
                 ob.rotation_euler = (math.radians(22 if i % 2 else -22), 0, 0)
@@ -470,49 +501,53 @@ def build_gun(sc):                                # 4x3 tiles: 32x24 Mode 0 px, 
     cy = 1.7                                         # the pit's centre, north of the front edge
     cyl("pit", 1.75, 0.45, (0, cy, 0.22), "white", verts=16)         # concrete emplacement
     cyl("floor", 1.4, 0.52, (0, cy, 0.26), "grey", verts=16)
-    cyl("mount", 0.6, 0.25, (0, cy, 0.55), "black", verts=12)
-    box("shield", (1.1, 0.9, 0.45), (0.15, cy, 0.8), "olive")      # gun house
-    box("roof", (1.15, 0.95, 0.1), (0.15, cy, 1.05), "teal")
-    cyl("barrel", 0.13, 2.6, (-1.7, cy, 0.8), "black", verts=8, rot=(0, math.radians(90), 0))
-    cyl("muzzle", 0.17, 0.25, (-2.95, cy, 0.8), "grey", verts=8, rot=(0, math.radians(90), 0))
+    sphere("dome", 0.75, (0.15, cy, 0.55), "olive", scale=(1, 1, 0.75))   # round gun house
+    sphere("hatch", 0.25, (0.25, cy + 0.1, 1.08), "teal", scale=(1, 1, 0.4))
+    cute_face(0.15, cy - 0.72, 0.6, 3.0)
+    cyl("barrel", 0.16, 1.7, (-1.35, cy, 0.75), "black", verts=10, rot=(0, math.radians(90), 0))
+    sphere("muzzle", 0.22, (-2.2, cy, 0.75), "grey")
     for x, y in ((2.4, cy - 0.8), (2.6, cy), (2.4, cy + 0.8)):     # shell crates by the rim
         box("crate", (0.4, 0.3, 0.3), (x, y, 0.15), "red")
+        sphere("shell", 0.1, (x, y, 0.36), "byel")
     frame_camera(sc, 32, 24)
 
 
 def build_plant(sc):                              # 4x3 tiles: 32x24 Mode 0 px, heavy water plant
-    box("hall", (4.6, 1.6, 1.0), (0.2, 1.6, 0.5), "white")          # concrete hall
-    box("roof", (4.7, 1.7, 0.12), (0.2, 1.6, 1.06), "teal")
-    for i in range(6):                                               # lit windows, south face
-        box("window", (0.3, 0.05, 0.3), (-1.75 + i * 0.75, 0.79, 0.6), "byel")
-    box("door", (0.5, 0.05, 0.6), (1.85, 0.79, 0.3), "black")
-    cyl("chimney", 0.25, 1.0, (-1.6, 1.4, 1.2), "red", verts=10)
-    cyl("cap", 0.28, 0.12, (-1.6, 1.4, 1.7), "black", verts=10)
-    cyl("tank", 0.45, 1.1, (-2.8, 1.0, 0.55), "grey", verts=12)      # the heavy water cells
-    cyl("tank2", 0.45, 1.1, (-2.8, 2.0, 0.55), "grey", verts=12)
-    box("pipe", (0.1, 0.1, 1.0), (-2.35, 1.5, 0.95), "black")
-    box("pipe2", (0.6, 0.1, 0.1), (-2.6, 1.5, 1.05), "black")
-    box("sign", (0.9, 0.05, 0.2), (0.2, 0.79, 0.88), "bred")
+    box("hall", (4.6, 1.6, 0.9), (0.2, 1.6, 0.45), "white")          # concrete hall
+    cyl("roof", 0.82, 4.7, (0.2, 1.6, 0.9), "teal", verts=16, rot=(0, math.radians(90), 0))
+    for x in (-1.75, -1.0, 1.4):                                     # round lit windows
+        sphere("window", 0.17, (x, 0.79, 0.55), "byel", scale=(1, 0.3, 1))
+    cute_face(0.2, 0.8, 0.5, 3.0)
+    sphere("door", 0.28, (2.0, 0.79, 0.25), "red", scale=(1, 0.3, 1.3))
+    cyl("chimney", 0.25, 1.0, (-1.6, 1.6, 1.4), "red", verts=10)
+    for dx, dz, r in ((0.0, 2.05, 0.22), (0.3, 2.3, 0.17)):          # a puff of smoke
+        sphere("smoke", r, (-1.6 + dx, 1.6, dz), "snowsh")
+    for y in (1.0, 2.0):                                             # the heavy water cells
+        cyl("tank", 0.45, 0.9, (-2.8, y, 0.45), "grey", verts=12)
+        sphere("tank_top", 0.45, (-2.8, y, 0.9), "grey", scale=(1, 1, 0.5))
     frame_camera(sc, 32, 24)
 
 
 def build_train(sc):                              # 10x3 tiles: 80x24 Mode 0 px, ammunition train
     y = 0.75                                         # on the track, facing west
-    cyl("boiler", 0.5, 3.0, (-6.2, y, 1.0), "black", verts=12, rot=(0, math.radians(90), 0))
-    cyl("smokebox", 0.52, 0.3, (-7.65, y, 1.0), "grey", verts=12, rot=(0, math.radians(90), 0))
-    cyl("funnel", 0.2, 0.6, (-7.2, y, 1.7), "black", verts=10)
-    box("cab", (1.3, 1.1, 1.3), (-4.1, y, 1.15), "black")
-    box("cab_roof", (1.5, 1.2, 0.1), (-4.1, y, 1.85), "red")
-    box("cab_window", (0.5, 1.12, 0.35), (-4.1, y, 1.45), "byel")
+    cyl("boiler", 0.52, 3.0, (-6.2, y, 1.0), "blue", verts=14, rot=(0, math.radians(90), 0))
+    sphere("nose", 0.52, (-7.7, y, 1.0), "grey", scale=(0.35, 1, 1))
+    cyl("funnel", 0.22, 0.45, (-7.1, y, 1.65), "black", verts=10)
+    sphere("funnel_top", 0.3, (-7.1, y, 1.9), "black", scale=(1, 1, 0.45))
+    sphere("dome", 0.25, (-6.0, y, 1.55), "byel")
+    cute_face(-6.8, y - 0.52, 1.0, 3.0)
+    box("cab", (1.3, 1.1, 1.2), (-4.1, y, 1.1), "blue")
+    sphere("cab_roof", 0.8, (-4.1, y, 1.72), "red", scale=(1, 0.8, 0.3))
+    sphere("cab_window", 0.25, (-4.1, y - 0.56, 1.35), "byel", scale=(1, 0.3, 1))
     box("chassis", (14.6, 0.9, 0.3), (-0.4, y, 0.45), "grey")
     for x in (-7.0, -6.2, -5.4, -4.4):                               # driving wheels
         cyl("wheel", 0.38, 1.0, (x, y, 0.38), "red", verts=12, rot=(math.radians(90), 0, 0))
-    box("tender", (1.6, 1.1, 1.0), (-2.6, y, 1.0), "black")
-    for i, x0 in enumerate((0.4, 4.4)):                              # two ammunition wagons
-        box("wagon", (3.4, 1.2, 1.3), (x0 + 0.7, y, 1.2), "olive")
-        box("roof", (3.5, 1.3, 0.1), (x0 + 0.7, y, 1.9), "grey")
-        box("door", (0.9, 1.22, 0.9), (x0 + 0.7, y, 1.1), "red")
-        box("mark", (0.5, 1.24, 0.25), (x0 - 0.4, y, 1.45), "white")  # stencilled crates
+    box("tender", (1.6, 1.1, 0.9), (-2.6, y, 0.95), "blue")
+    for x0 in (0.4, 4.4):                                            # two ammunition wagons
+        box("wagon", (3.4, 1.2, 1.1), (x0 + 0.7, y, 1.1), "olive")
+        cyl("roof", 0.66, 3.5, (x0 + 0.7, y, 1.62), "grey", verts=14, rot=(0, math.radians(90), 0))
+        sphere("door", 0.4, (x0 + 0.7, y - 0.6, 1.05), "red", scale=(1, 0.2, 1.1))
+        sphere("mark", 0.15, (x0 - 0.4, y - 0.61, 1.3), "byel", scale=(1, 0.2, 1))
         for x in (x0 - 0.5, x0 + 1.9):
             cyl("wheel", 0.3, 1.0, (x, y, 0.3), "black", verts=10, rot=(math.radians(90), 0, 0))
     bpy.ops.object.empty_add(location=(0, 0, 0))     # centre, then stretch to fill
@@ -526,21 +561,23 @@ def build_train(sc):                              # 10x3 tiles: 80x24 Mode 0 px,
 
 
 def build_trap(sc):                               # bear trap, in a 12x16 sprite cell
-    cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=10)
-    for y in (-0.36, 0.36):                          # open jaws, teeth up
-        box("jaw", (1.0, 0.08, 0.2), (0, y, 0.12), "black")
+    cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=12)
+    for y in (-0.36, 0.36):                          # open jaws, round teeth up
+        box("jaw", (1.0, 0.1, 0.18), (0, y, 0.12), "black")
         for x in (-0.38, -0.13, 0.13, 0.38):
-            box("tooth", (0.09, 0.09, 0.16), (x, y * 0.85, 0.28), "white")
-    box("chain", (0.07, 0.6, 0.05), (0.6, 0.15, 0.03), "grey")
+            sphere("tooth", 0.08, (x, y * 0.85, 0.27), "white", scale=(1, 1, 1.3))
+    sphere("spring", 0.12, (0, 0, 0.1), "byel")
     frame_camera(sc, 12, 16)
 
 
-def build_bomb(sc):                               # time bomb: dynamite + clock, 12x16 cell
-    for x in (-0.16, 0, 0.16):
-        cyl("stick", 0.08, 0.55, (x, 0, 0.3), "bred", verts=8)
-    box("tape", (0.5, 0.2, 0.08), (0, 0, 0.3), "black")
-    cyl("clock", 0.13, 0.05, (0, -0.12, 0.42), "pyel", verts=10, rot=(math.radians(90), 0, 0))
-    box("wire", (0.03, 0.03, 0.3), (0.12, -0.1, 0.62), "byel")
+def build_bomb(sc):                               # a round cartoon bomb with a lit fuse, 12x16 cell
+    sphere("bomb", 0.46, (0, 0, 0.46), "black")
+    sphere("shine", 0.1, (-0.2, -0.36, 0.66), "grey")
+    cyl("cap", 0.14, 0.14, (0, 0, 0.94), "grey", verts=8)
+    cyl("fuse", 0.04, 0.3, (0.08, 0, 1.1), "orange", verts=6, rot=(0, 0.5, 0))
+    sphere("spark", 0.12, (0.17, 0, 1.25), "byel")
+    for ex in (-0.17, 0.17):
+        sphere("eye", 0.1, (ex, -0.44, 0.46), "white", scale=(0.9, 0.5, 1.3))
     frame_camera(sc, 12, 16)
 
 
