@@ -18,6 +18,7 @@ m07_desc:
   db M07_GUARDS
   dw m07_briefing
   db MAP07_BANK
+  dw 0                          ; no HUD tips
 m07_ruin:                       ; twisted wreckage on a scorched track
   db TILE_SNOW, TILE_RUBBLE, TILE_SNOW, TILE_SNOW, TILE_RUBBLE
   db TILE_SNOW, TILE_SNOW, TILE_RUBBLE, TILE_SNOW, TILE_SNOW

@@ -110,6 +110,7 @@ main_loop:
   call guards_update
   call items_update
   call check_end
+  call tips_update
   call clock_update
   jr .live
 .over:
@@ -122,7 +123,11 @@ main_loop:
   jp nz,title
   ld a,(cur_mission)
   inc a
-  cp MISSION_COUNT
+  cp TUTORIAL+1                 ; training leads on to mission 1
+  jr nz,.next
+  xor a
+.next:
+  cp TUTORIAL                   ; after the last mission: stay on it
   jp nc,title
   ld (cur_mission),a
   jp title
@@ -343,7 +348,7 @@ fuzz_rand:
   ret
 
 fuzz_keys:
-  db KEY_1,KEY_2,KEY_3,KEY_6,KEY_D,KEY_G,KEY_V,KEY_RETURN
+  db KEY_1,KEY_2,KEY_3,KEY_6,KEY_D,KEY_G,KEY_V,KEY_0
   db KEY_7,KEY_2,KEY_3,KEY_5,KEY_D,KEY_G,KEY_4,KEY_ESC
 fuzz_state: dw FUZZ_SEED*2+1           ; odd, distinct per seed
 fuzz_count: dw FUZZ_TICKS
@@ -636,7 +641,7 @@ sprites3_end:
   endif
 
 ; ---------------------------------------------------------------------------
-; RAM bank 7 (paged at &4000 when needed): title art, mission blocks, map 7
+; RAM bank 7 (paged at &4000 when needed): title art, mission blocks, maps 7-8
 ; ---------------------------------------------------------------------------
   bank 7
   org &4000
@@ -684,9 +689,17 @@ mis_phys_7:                    ; mission 7, assembled for mis_buf
 mis_end_7:
   assert mis_end_7-mis_buf<=MIS_BUF_SIZE
   org mis_phys_7+mis_end_7-mis_buf
-  ds MIS_BUF_SIZE-(mis_end_7-mis_buf)  ; the last copy reads a whole buffer
+mis_phys_8:                    ; training, assembled for mis_buf
+  org mis_buf,mis_phys_8
+  include "missions/mission08.asm"
+mis_end_8:
+  assert mis_end_8-mis_buf<=MIS_BUF_SIZE
+  org mis_phys_8+mis_end_8-mis_buf
+  ds MIS_BUF_SIZE-(mis_end_8-mis_buf)  ; the last copy reads a whole buffer
 MAP07_BANK      equ RAM_BANK7   ; packed maps (tools/map2asm.py)
+MAP08_BANK      equ RAM_BANK7
   include "mission07_map.asm"   ; generated: build/mission07_map.asm
+  include "mission08_map.asm"   ; generated: build/mission08_map.asm
 bank7_end:
   assert bank7_end<=&8000
 

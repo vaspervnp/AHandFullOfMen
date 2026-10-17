@@ -30,3 +30,4 @@ PEN_YELLOW      equ 13
 PEN_HUD         equ 14
 PEN_TEXT        equ 15
 PEN_DKBLUE      equ 4
+PEN_PINK        equ 10

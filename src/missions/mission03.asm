@@ -17,6 +17,7 @@ m03_desc:
   db M03_GUARDS
   dw m03_briefing
   db MAP03_BANK
+  dw 0                          ; no HUD tips
 m03_ruin:                       ; she sinks
   ds 16*6,TILE_WATER
 m03_txt_name:  db "MISSION 3: ROUGH WATERS",0

@@ -156,6 +156,7 @@ KEY_4           equ &70
 KEY_5           equ &61
 KEY_6           equ &60
 KEY_7           equ &51
+KEY_0           equ &40
 KEY_JUP         equ &90
 KEY_JDOWN       equ &91
 KEY_JLEFT       equ &92
@@ -188,4 +189,5 @@ MIS_TXT_OBJ     equ 26          ; debrief checklist line, 26 chars (dw)
 MIS_GUARDS      equ 28          ; sentries, for the debrief tally
 MIS_BRIEFING    equ 29          ; briefing page lines (dw, page_lines format)
 MIS_MAP_BANK    equ 31          ; RAM config that pages in the packed map
-MIS_SIZE        equ 32
+MIS_TIPS        equ 32          ; HUD tip zones (dw, 0 = none; see tips_update)
+MIS_SIZE        equ 34

@@ -400,3 +400,60 @@ mu_rand:
   ld h,a
   ld (mu_seed),hl
   ret
+
+; ---------------------------------------------------------------------------
+; Training tips: the first zone of (mis+MIS_TIPS) holding the selected
+; commando puts its text on the HUD objective line. Zone: x0, x1, y0, y1
+; (world, inclusive), text (dw, 21 chars: "> " and the tip).
+; ---------------------------------------------------------------------------
+tips_update:
+  ld hl,(mis+MIS_TIPS)
+  ld a,h
+  or l
+  ret z
+  push hl
+  ld a,(sel_cmd)
+  call ent_ptr
+  pop hl
+  ld b,(ix+ent.x)
+  ld c,(ix+ent.y)
+.zone:
+  ld a,(hl)
+  cp &FF
+  ret z
+  ld a,b
+  cp (hl)                       ; x < x0?
+  jr c,.skip0
+  inc hl
+  ld a,(hl)
+  cp b                          ; x1 < x?
+  jr c,.skip1
+  inc hl
+  ld a,c
+  cp (hl)                       ; y < y0?
+  jr c,.skip2
+  inc hl
+  ld a,(hl)
+  cp c                          ; y1 < y?
+  jr c,.skip3
+  inc hl
+  ld e,(hl)
+  inc hl
+  ld d,(hl)
+  ld hl,(mis+MIS_TXT_HUD1)
+  or a
+  sbc hl,de
+  ret z                         ; already showing
+  ld (mis+MIS_TXT_HUD1),de
+  jp hud_mark_dirty
+.skip0:
+  inc hl
+.skip1:
+  inc hl
+.skip2:
+  inc hl
+.skip3:
+  inc hl
+  inc hl
+  inc hl
+  jr .zone

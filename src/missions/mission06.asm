@@ -18,6 +18,7 @@ m06_desc:
   db M06_GUARDS
   dw m06_briefing
   db MAP06_BANK
+  dw 0                          ; no HUD tips
 m06_ruin:                       ; the plant in ruins
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE, TILE_RUBBLE
   db TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE

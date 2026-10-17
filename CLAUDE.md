@@ -74,7 +74,10 @@
   the descriptor into `mis` (through `bounce`).
 - Maps: `tools/map2asm.py` packs them (LZ, format in its docstring) into
   banks 6 (maps 1-4), 5 (maps 5-6) and 7 (map 7 on); the bank is the descriptor's
-  `MIS_MAP_BANK`. `map_unpack` decodes straight into `map_buf`, paging the
+  `MIS_MAP_BANK`. `MIS_TIPS` (0 for none) points at HUD tip zones that
+  `tips_update` checks each tick against the selected commando. The
+  training course is index `TUTORIAL` (last); a win there leads to
+  mission 1, a win on the last mission stays put. `map_unpack` decodes straight into `map_buf`, paging the
   source bank in per byte, then scatters snow specks with a fixed-seed
   generator (',' and ':' in the map text count as plain snow). New maps
   go in bank 7. Commandos have `ent.role` (ROLE_*), set from their spawn

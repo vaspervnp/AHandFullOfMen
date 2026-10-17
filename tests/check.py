@@ -46,6 +46,10 @@ class Run:
         scr[0:10] = bytes(10)
         return scr
 
+    def word(self, name, off=0):
+        lo, hi = self.cpc.base_ram(self.syms[name.lower()] + off, 2)
+        return lo | hi << 8
+
     def byte(self, name, off=0):
         return self.cpc.base_ram(self.syms[name.lower()] + off)[0]
 
@@ -405,6 +409,28 @@ def check_t57_m7_route_out(r):
 def check_t58_m7_escape(r):
     assert r.ent(2, "flags") & EF_BOARDED, "the Spy did not board the truck"
     assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
+
+
+def check_t59_train_boot(r):
+    assert r.byte("cur_mission") == 7
+    assert [r.ent(i, "role") for i in range(3)] == [0, 1, 2], "wrong squad"
+    guards = sum(1 for i in range(16) if r.ent(i, "type") == 2)
+    assert guards == 2, f"{guards} sentries"
+    assert r.word("mis", 22) == r.syms["m08_tip_walk"], "first tip not on the HUD"
+    assert r.byte("alarm") == 0, "spotted at the start"
+
+
+def check_t60_train_tips(r):
+    assert r.word("mis", 22) == r.syms["m08_tip_cone"], "the cone tip didn't show"
+
+
+def check_t61_train_snipe(r):
+    assert r.byte("target_down") == 1, "the training mast is still up"
+
+
+def check_t62_menu_stick(r):
+    assert r.byte("cur_mission") == 7, f"the stick picked {r.byte('cur_mission')}, not the training"
+    assert r.ent(1, "role") == 1, "the training squad was not spawned"
 
 
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}

@@ -156,8 +156,22 @@ hud_contents:
   jr z,.obj
   ld hl,(mis+MIS_TXT_HUD2)
 .obj:
+  ld a,(mis+MIS_TIPS+1)         ; training tips stand out in pink
+  or a
+  jr z,.plain
+  push hl
+  ld a,PEN_PINK
+  call text_ink
+  pop hl
   ld c,22
   call hud_print
+  ld a,PEN_TEXT
+  call text_ink
+  jr .status
+.plain:
+  ld c,22
+  call hud_print
+.status:
 
   ld a,(game_over)
   or a

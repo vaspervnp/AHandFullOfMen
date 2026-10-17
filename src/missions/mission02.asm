@@ -17,6 +17,7 @@ m02_desc:
   db M02_GUARDS
   dw m02_briefing
   db MAP02_BANK
+  dw 0                          ; no HUD tips
 m02_ruin:                       ; burnt-out tanks
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE
   db TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH

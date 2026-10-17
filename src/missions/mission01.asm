@@ -18,6 +18,7 @@ m01_desc:
   db M01_GUARDS
   dw m01_briefing
   db MAP01_BANK
+  dw 0                          ; no HUD tips
 m01_ruin:                       ; the tower: top half snow, base rubble
   db TILE_SNOW, TILE_SNOW, TILE_SNOW, TILE_SNOW
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH

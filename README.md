@@ -33,10 +33,20 @@ expansion. On a 64K machine the loader says so and returns to BASIC.
 | V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
-The title menu lists these shortcuts too. Keys 1 to 7 on the menu pick the
-mission. Space or Fire opens its briefing (objectives, and what each
+The title menu lists these shortcuts too. On the menu, the joystick or the
+cursor keys step through the missions, keys 1 to 7 pick one directly, and
+0 picks the training course. Space or Fire opens its briefing (objectives, and what each
 commando's D and G do), and pressing it again starts the mission.
 Accomplishing a mission moves the menu on to the next one.
+
+## Training: Boot Camp
+
+A gentle course for new players, from the south-west corner to the truck.
+As the selected commando reaches each lesson, a pink tip replaces the objective
+line in the panel: walking, picking a commando, swimming with the Marine
+(the others take the bridge), crawling up behind a sentry and knifing him,
+a patrol's vision cone, the decoy, and the Sniper's shot at the barrel by
+the training mast. Finishing it moves the menu on to Mission 1.
 
 ## Mission 1: Baptism of Fire
 

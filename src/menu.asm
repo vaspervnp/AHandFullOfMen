@@ -61,8 +61,36 @@ page_clear_row:
   ld de,SCR_W*256+8
   jp fill_rect
 
-; Menu keys while waiting: 1 .. 7 choose the mission.
+; Menu keys while waiting: 1 .. 7 choose the mission, 0 the training;
+; the stick (or cursor keys / QAOP) steps through them all.
 menu_keys:
+  ld a,(joy_prev)               ; directions pressed this frame
+  cpl
+  ld b,a
+  ld a,(joy_state)
+  and b
+  and (1<<JOY_UP)|(1<<JOY_DOWN)|(1<<JOY_LEFT)|(1<<JOY_RIGHT)
+  jr z,.keys
+  and (1<<JOY_UP)|(1<<JOY_LEFT)
+  ld a,(cur_mission)
+  jr nz,.prev
+  inc a                         ; right / down: the next one, round to 1
+  cp MISSION_COUNT
+  jr c,.pick
+  xor a
+  jr .pick
+.prev:
+  or a                          ; left / up: the previous one
+  jr nz,.dec
+  ld a,MISSION_COUNT
+.dec:
+  dec a
+  jr .pick
+.keys:
+  ld a,KEY_0
+  call kbd_hit
+  ld a,TUTORIAL
+  jr nz,.pick
   ld a,KEY_1
   call kbd_hit
   ld a,0

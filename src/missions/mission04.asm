@@ -17,6 +17,7 @@ m04_desc:
   db M04_GUARDS
   dw m04_briefing
   db MAP04_BANK
+  dw 0                          ; no HUD tips
 m04_ruin:                       ; the span falls into the river
   ds 4*3,TILE_WATER
 m04_txt_name:  db "MISSION 4: A BRIDGE TOO FAR",0

@@ -17,6 +17,7 @@ m05_desc:
   db M05_GUARDS
   dw m05_briefing
   db MAP05_BANK
+  dw 0                          ; no HUD tips
 m05_ruin:                       ; a burnt-out pit
   db TILE_SNOW, TILE_RUBBLE, TILE_SCORCH, TILE_SNOW
   db TILE_RUBBLE, TILE_SCORCH, TILE_RUBBLE, TILE_SCORCH
