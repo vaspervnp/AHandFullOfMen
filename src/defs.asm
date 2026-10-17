@@ -16,7 +16,7 @@ RAM_BASE64      equ &C0         ; default 64K bank configuration
 RAM_SPRITES     equ &C4         ; bank 4 at &4000 (beret, guard, cursor, fx)
 RAM_BANK5       equ &C5         ; bank 5 at &4000 (Marine, Sniper, music, maps 5-6)
 RAM_BANK6       equ &C6         ; bank 6 at &4000 (Sapper, Spy, maps 1-4)
-RAM_BANK7       equ &C7         ; bank 7 at &4000 (title art, mission blocks)
+RAM_BANK7       equ &C7         ; bank 7 at &4000 (title art, mission blocks, map 7)
 
 ; --- Screen layout ----------------------------------------------------------
 SCREEN          equ &C000
@@ -155,6 +155,7 @@ KEY_3           equ &71
 KEY_4           equ &70
 KEY_5           equ &61
 KEY_6           equ &60
+KEY_7           equ &51
 KEY_JUP         equ &90
 KEY_JDOWN       equ &91
 KEY_JLEFT       equ &92

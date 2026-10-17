@@ -194,3 +194,34 @@ tile_attrs:
   db TF_SOLID|TF_OPAQUE         ; 180 plant9
   db TF_SOLID|TF_OPAQUE         ; 181 plant10
   db TF_SOLID|TF_OPAQUE         ; 182 plant11
+  db 0                          ; 183 rail_h
+  db TF_SOLID|TF_OPAQUE         ; 184 train0 (10x3 ammunition train)
+  db TF_SOLID|TF_OPAQUE         ; 185 train1
+  db TF_SOLID|TF_OPAQUE         ; 186 train2
+  db TF_SOLID|TF_OPAQUE         ; 187 train3
+  db TF_SOLID|TF_OPAQUE         ; 188 train4
+  db TF_SOLID|TF_OPAQUE         ; 189 train5
+  db TF_SOLID|TF_OPAQUE         ; 190 train6
+  db TF_SOLID|TF_OPAQUE         ; 191 train7
+  db TF_SOLID|TF_OPAQUE         ; 192 train8
+  db TF_SOLID|TF_OPAQUE         ; 193 train9
+  db TF_SOLID|TF_OPAQUE         ; 194 train10
+  db TF_SOLID|TF_OPAQUE         ; 195 train11
+  db TF_SOLID|TF_OPAQUE         ; 196 train12
+  db TF_SOLID|TF_OPAQUE         ; 197 train13
+  db TF_SOLID|TF_OPAQUE         ; 198 train14
+  db TF_SOLID|TF_OPAQUE         ; 199 train15
+  db TF_SOLID|TF_OPAQUE         ; 200 train16
+  db TF_SOLID|TF_OPAQUE         ; 201 train17
+  db TF_SOLID|TF_OPAQUE         ; 202 train18
+  db TF_SOLID|TF_OPAQUE         ; 203 train19
+  db TF_SOLID|TF_OPAQUE         ; 204 train20
+  db TF_SOLID|TF_OPAQUE         ; 205 train21
+  db TF_SOLID|TF_OPAQUE         ; 206 train22
+  db TF_SOLID|TF_OPAQUE         ; 207 train23
+  db TF_SOLID|TF_OPAQUE         ; 208 train24
+  db TF_SOLID|TF_OPAQUE         ; 209 train25
+  db TF_SOLID|TF_OPAQUE         ; 210 train26
+  db TF_SOLID|TF_OPAQUE         ; 211 train27
+  db TF_SOLID|TF_OPAQUE         ; 212 train28
+  db TF_SOLID|TF_OPAQUE         ; 213 train29

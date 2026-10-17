@@ -41,7 +41,7 @@ CHAR_RES = (96, 64)         # 12x16 Mode 0 sprite * (8, 4)
 TOWER_RES = (128, 128)      # 16x32 Mode 0 stamp * (8, 4)
 UNIT = 2.8 / 24             # Blender units per visual unit (character framing)
 SUBJECTS = ["beret", "marine", "sniper", "sapper", "spy", "guard", "tower", "pine", "rock",
-            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "railbridge", "gun", "plant", "portraits", "banner"]
+            "barrel", "trap", "bomb", "explosion", "truck", "depot", "uboat", "railbridge", "gun", "plant", "train", "portraits", "banner"]
 OPERATIVES = ("beret", "marine", "sniper", "sapper", "spy")      # portrait order = ROLE_*
 
 LOOKS = {
@@ -154,54 +154,66 @@ def pivot(name, loc, parent=None):
 
 
 # ---------------------------------------------------------------------------
-# Low-poly operative / sentry (1.8 units tall, feet at z = 0, facing -Y)
+# Chibi operative / sentry (about 1.7 units tall, feet at z = 0, facing -Y):
+# a big round head (half the height) with large shiny eyes, a short round
+# body, stubby limbs.
 # ---------------------------------------------------------------------------
+
+HEAD_Z = 1.22                   # head centre
+HEAD_R = 0.42
+
 
 def build_character(look):
     root = pivot("root", (0, 0, 0))
     body = pivot("body", (0, 0, 0), root)
-    hip_z = 0.9
+    hip_z = 0.42
     parts = {"root": root, "body": body}
-    for side, x in (("L", -0.13), ("R", 0.13)):
+    for side, x in (("L", -0.11), ("R", 0.11)):
         hip = pivot(f"hip{side}", (x, 0, hip_z), body)
-        box(f"leg{side}", (0.2, 0.22, 0.82), (0, 0, -0.41), look["uniform"], hip)
-        box(f"boot{side}", (0.22, 0.32, 0.12), (0, -0.05, -0.84), "black", hip)
+        cyl(f"leg{side}", 0.1, 0.3, (0, 0, -0.17), look["uniform"], hip, verts=8)
+        sphere(f"boot{side}", 0.12, (0, -0.04, -0.34), "black", hip, scale=(1, 1.25, 0.7))
         parts[f"hip{side}"] = hip
-    box("torso", (0.5, 0.3, 0.6), (0, 0, 1.2), look["uniform"], body)
-    box("belt", (0.52, 0.32, 0.08), (0, 0, 0.93), look["shade"], body)
+    cyl("torso", 0.24, 0.44, (0, 0, 0.62), look["uniform"], body, verts=10)
+    sphere("tummy", 0.25, (0, 0, 0.5), look["uniform"], body, scale=(1, 0.95, 0.7))
+    cyl("belt", 0.255, 0.07, (0, 0, 0.47), look["shade"], body, verts=10)
     if look["pack"]:
         if look.get("big_pack"):                      # demolition charges
-            box("pack", (0.46, 0.26, 0.56), (0, 0.28, 1.18), look["pack"], body)
-            box("charge", (0.48, 0.1, 0.12), (0, 0.42, 1.0), "bred", body)
+            box("pack", (0.4, 0.22, 0.42), (0, 0.27, 0.66), look["pack"], body)
+            box("charge", (0.42, 0.08, 0.1), (0, 0.39, 0.52), "bred", body)
         else:
-            box("pack", (0.36, 0.18, 0.42), (0, 0.24, 1.2), look["pack"], body)
-    for side, x in (("L", -0.32), ("R", 0.32)):
-        sh = pivot(f"sh{side}", (x, 0, 1.45), body)
-        box(f"arm{side}", (0.14, 0.16, 0.55), (0, 0, -0.27), look["shade"], sh)
-        box(f"hand{side}", (0.13, 0.13, 0.12), (0, 0, -0.6), "skin", sh)
+            box("pack", (0.32, 0.16, 0.32), (0, 0.24, 0.66), look["pack"], body)
+    for side, x in (("L", -0.29), ("R", 0.29)):
+        sh = pivot(f"sh{side}", (x, 0, 0.8), body)
+        cyl(f"arm{side}", 0.075, 0.28, (0, 0, -0.14), look["shade"], sh, verts=8)
+        sphere(f"hand{side}", 0.085, (0, 0, -0.32), "skin", sh)
         parts[f"sh{side}"] = sh
-    head = pivot("head", (0, 0, 1.62), body)
-    sphere("face", 0.16, (0, 0, 0.0), "skin", head, scale=(1, 1, 1.15))
-    sphere("hair", 0.165, (0, 0.04, 0.03), "red", head, scale=(1, 0.95, 1.12))   # back of head
-    for ex in (-0.065, 0.065):                                 # eyes (show in portraits)
-        box("eye", (0.05, 0.04, 0.05), (ex, -0.165, 0.03), "black", head)
-    box("mouth", (0.1, 0.04, 0.03), (0, -0.16, -0.09), "red", head)
+    head = pivot("head", (0, 0, HEAD_Z), body)
+    sphere("face", HEAD_R, (0, 0, 0), "skin", head, scale=(1.08, 1, 0.95))
+    sphere("hair", HEAD_R + 0.02, (0, 0.06, 0.05), "red", head, scale=(1.08, 0.95, 0.95))
+    sphere("fringe", 0.2, (0, -0.3, 0.24), "red", head, scale=(1.6, 0.6, 0.55))
+    for ex in (-0.16, 0.16):                          # big shiny eyes
+        sphere("eye", 0.085, (ex, -0.37, -0.03), "black", head, scale=(0.8, 0.45, 1.3))
+        sphere("shine", 0.03, (ex + 0.025, -0.415, 0.03), "white", head)
+        sphere("blush", 0.06, (ex * 1.6, -0.33, -0.15), "bred", head, scale=(1.1, 0.35, 0.6))
+    sphere("mouth", 0.035, (0, -0.405, -0.18), "red", head, scale=(1.4, 0.5, 0.8))
     hat = look["hat"]
     if hat == "helmet":
-        sphere("helmet", 0.2, (0, 0, 0.07), look["hatc"], head, scale=(1.05, 1.05, 0.75))
-        cyl("rim", 0.24, 0.04, (0, 0, 0.0), look["hatc"], head)
+        sphere("helmet", HEAD_R + 0.06, (0, 0.02, 0.12), look["hatc"], head, scale=(1.08, 1.05, 0.72))
+        cyl("rim", HEAD_R + 0.1, 0.05, (0, 0.02, 0.06), look["hatc"], head, verts=12)
     elif hat == "beret":
-        cyl("beret", 0.19, 0.08, (0.04, 0, 0.14), look["hatc"], head, rot=(0, 0.25, 0))
+        cyl("beret", 0.4, 0.13, (0.07, 0.02, 0.36), look["hatc"], head, verts=12, rot=(0, 0.25, 0))
+        sphere("bobble", 0.05, (0.1, 0.02, 0.45), look["hatc"], head)
     elif hat == "cap":
-        cyl("cap", 0.17, 0.1, (0, 0, 0.13), look["hatc"], head)
-        box("peak", (0.24, 0.14, 0.03), (0, -0.16, 0.09), look["hatc"], head)
+        cyl("cap", 0.4, 0.18, (0, 0.02, 0.32), look["hatc"], head, verts=12)
+        box("peak", (0.5, 0.3, 0.05), (0, -0.4, 0.25), look["hatc"], head)
     elif hat == "fedora":
-        cyl("brim", 0.26, 0.03, (0, 0, 0.1), look["hatc"], head, verts=10)
-        cyl("crown", 0.16, 0.16, (0, 0, 0.19), look["hatc"], head, verts=10)
+        cyl("brim", 0.56, 0.05, (0, 0.02, 0.3), look["hatc"], head, verts=12)
+        cyl("crown", 0.34, 0.28, (0, 0.02, 0.45), look["hatc"], head, verts=12)
+        cyl("band", 0.345, 0.06, (0, 0.02, 0.35), "red", head, verts=12)
     elif hat == "hood":
-        sphere("hood", 0.2, (0, 0.08, 0.05), look["hatc"], head, scale=(1.05, 1.0, 1.15))  # face open
-    gun_len = 1.0 if look.get("long_gun") else 0.25 if look.get("short_gun") else 0.7
-    gun = box("gun", (0.06, gun_len, 0.08), (0, -gun_len / 2 + 0.1, -0.55), look["gun"],
+        sphere("hood", HEAD_R + 0.07, (0, 0.13, 0.04), look["hatc"], head, scale=(1.1, 1.0, 1.05))
+    gun_len = 0.6 if look.get("long_gun") else 0.18 if look.get("short_gun") else 0.42
+    gun = box("gun", (0.06, gun_len, 0.08), (0, -gun_len / 2 + 0.08, -0.32), look["gun"],
               parts["shR"])
     parts["gun"] = gun
     parts["head"] = head
@@ -214,6 +226,7 @@ def pose(parts, name, step):
         parts[k].rotation_euler = (0, 0, parts[k].rotation_euler[2] if k == "root" else 0)
     parts["root"].location = (0, 0, 0)
     parts["body"].location = (0, 0, 0)
+    parts["head"].rotation_euler[0] = math.radians(-22)    # chibi: face up to the camera
     swing = math.radians(28)
     if name == "walk":
         s = swing if step == 1 else -swing
@@ -227,7 +240,7 @@ def pose(parts, name, step):
         parts["hipR"].rotation_euler[0] = math.radians(-15)
     elif name == "crawl":
         parts["body"].rotation_euler[0] = math.radians(90)      # prone, head forward (-Y)
-        parts["body"].location = (0, 0.8, 0.18)
+        parts["body"].location = (0, 1.0, HEAD_R - 0.05)    # head stays in frame
         s = math.radians(20) if step == 1 else -math.radians(20)
         parts["hipL"].rotation_euler[0] = s
         parts["hipR"].rotation_euler[0] = -s
@@ -235,7 +248,7 @@ def pose(parts, name, step):
         parts["shR"].rotation_euler[0] = math.radians(160) - s
     elif name == "corpse":
         parts["body"].rotation_euler[0] = math.radians(-90)     # on the back, head behind
-        parts["body"].location = (0, -0.8, 0.18)
+        parts["body"].location = (0, -0.6, HEAD_R - 0.05)
         parts["shL"].rotation_euler[1] = math.radians(-60)
         parts["shR"].rotation_euler[1] = math.radians(70)
 
@@ -483,6 +496,35 @@ def build_plant(sc):                              # 4x3 tiles: 32x24 Mode 0 px, 
     frame_camera(sc, 32, 24)
 
 
+def build_train(sc):                              # 10x3 tiles: 80x24 Mode 0 px, ammunition train
+    y = 0.75                                         # on the track, facing west
+    cyl("boiler", 0.5, 3.0, (-6.2, y, 1.0), "black", verts=12, rot=(0, math.radians(90), 0))
+    cyl("smokebox", 0.52, 0.3, (-7.65, y, 1.0), "grey", verts=12, rot=(0, math.radians(90), 0))
+    cyl("funnel", 0.2, 0.6, (-7.2, y, 1.7), "black", verts=10)
+    box("cab", (1.3, 1.1, 1.3), (-4.1, y, 1.15), "black")
+    box("cab_roof", (1.5, 1.2, 0.1), (-4.1, y, 1.85), "red")
+    box("cab_window", (0.5, 1.12, 0.35), (-4.1, y, 1.45), "byel")
+    box("chassis", (14.6, 0.9, 0.3), (-0.4, y, 0.45), "grey")
+    for x in (-7.0, -6.2, -5.4, -4.4):                               # driving wheels
+        cyl("wheel", 0.38, 1.0, (x, y, 0.38), "red", verts=12, rot=(math.radians(90), 0, 0))
+    box("tender", (1.6, 1.1, 1.0), (-2.6, y, 1.0), "black")
+    for i, x0 in enumerate((0.4, 4.4)):                              # two ammunition wagons
+        box("wagon", (3.4, 1.2, 1.3), (x0 + 0.7, y, 1.2), "olive")
+        box("roof", (3.5, 1.3, 0.1), (x0 + 0.7, y, 1.9), "grey")
+        box("door", (0.9, 1.22, 0.9), (x0 + 0.7, y, 1.1), "red")
+        box("mark", (0.5, 1.24, 0.25), (x0 - 0.4, y, 1.45), "white")  # stencilled crates
+        for x in (x0 - 0.5, x0 + 1.9):
+            cyl("wheel", 0.3, 1.0, (x, y, 0.3), "black", verts=10, rot=(math.radians(90), 0, 0))
+    bpy.ops.object.empty_add(location=(0, 0, 0))     # centre, then stretch to fill
+    rig = bpy.context.active_object                  # all ten tiles
+    for ob in sc.objects:
+        if ob.type == "MESH":
+            ob.location.x += 0.75
+            ob.parent = rig
+    rig.scale = (1.25, 1, 1)
+    frame_camera(sc, 80, 24)
+
+
 def build_trap(sc):                               # bear trap, in a 12x16 sprite cell
     cyl("plate", 0.45, 0.05, (0, 0, 0.03), "grey", verts=10)
     for y in (-0.36, 0.36):                          # open jaws, teeth up
@@ -515,12 +557,13 @@ def build_portraits(sc):
             parts[k].rotation_euler = (0, 0, 0)
         cam_data = bpy.data.cameras.new(f"cam_{subject}")
         cam_data.type = "ORTHO"
-        cam_data.ortho_scale = 0.72
+        cam_data.ortho_scale = 1.45                      # the big chibi head
         cam = bpy.data.objects.new(f"cam_{subject}", cam_data)
         sc.collection.objects.link(cam)
         el = math.radians(8)
-        cam.location = Vector((i * 3.0, -10 * math.cos(el), 1.56 + 10 * math.sin(el)))
-        cam.rotation_euler = (Vector((i * 3.0, 0, 1.56)) - cam.location).to_track_quat("-Z", "Y").to_euler()
+        cz = HEAD_Z - 0.08
+        cam.location = Vector((i * 3.0, -10 * math.cos(el), cz + 10 * math.sin(el)))
+        cam.rotation_euler = (Vector((i * 3.0, 0, cz)) - cam.location).to_track_quat("-Z", "Y").to_euler()
     box("backdrop", (20, 0.1, 6), (6.0, 3.0, 1.5), "grey")
     sc.render.resolution_x, sc.render.resolution_y = PORTRAIT_RES[0] * 8, PORTRAIT_RES[1] * 4
 
@@ -565,26 +608,33 @@ def build_banner(sc):
     sc.collection.objects.link(caps)
     caps.data.materials.append(mat("white"))
     box("snowfield", (w * 1.4, 40, 0.1), (0, 0, -0.05), "white")
-    # logo
-    for text, z in (("A HANDFUL", 4.05), ("OF MEN", 1.25)):
-        for colour, dx, dz, dy in (("red", 0.16, -0.2, 0.15), ("byel", 0, 0, 0)):
-            bpy.ops.object.text_add(location=(dx, -4 + dy, z + dz), rotation=(math.radians(90), 0, 0))
+    # logo: a heavy round face, yellow with an even red outline (the same text,
+    # fattened, just behind), big enough for Mode 0's wide pixels
+    try:
+        font = bpy.data.fonts.load(r"C:\Windows\Fonts\ariblk.ttf")
+    except RuntimeError:
+        font = None                                  # Blender's own face
+    for text, z in (("A HANDFUL", 3.55), ("OF MEN", 0.6)):
+        for colour, dy, offset in (("red", 0.2, 0.2), ("byel", 0, 0.02)):
+            bpy.ops.object.text_add(location=(0, -4 + dy, z), rotation=(math.radians(90), 0, 0))
             t = bpy.context.active_object
             t.data.body = text
+            if font:
+                t.data.font = font
             t.data.align_x = "CENTER"
-            t.data.size = 2.85
+            t.data.size = 3.6
             t.data.extrude = 0.05
-            t.data.offset = 0.07          # bolder strokes survive Mode 0 pixels
-            t.data.space_character = 1.1
+            t.data.offset = offset
+            t.data.space_character = 1.05
             t.data.materials.append(mat(colour))
     # the squad on the left, a sentry on the right
-    for x, subject, yaw in ((-16.5, "beret", 90), (-15, "marine", 90), (15.5, "guard", -90)):
+    for x, subject, yaw in ((-16.8, "beret", 25), (-14.6, "marine", 15), (15.6, "guard", -25)):
         parts = build_character(LOOKS[subject])
         parts["root"].location = (x, -2, 0)
         parts["root"].rotation_euler = (0, 0, math.radians(yaw))
         parts["hipL"].rotation_euler[0] = math.radians(25)
         parts["hipR"].rotation_euler[0] = math.radians(-25)
-        parts["root"].scale = (1.6, 1.6, 1.6)
+        parts["root"].scale = (2.3, 2.3, 2.3)
     cam_data = bpy.data.cameras.new("cam")
     cam_data.type = "ORTHO"
     cam_data.ortho_scale = w
@@ -600,7 +650,7 @@ def render_prop(subject, out_dir, blend_dir):
     builders = {"tower": build_tower, "pine": build_pine, "rock": build_rock,
                 "barrel": build_barrel, "truck": build_truck, "banner": build_banner,
                 "depot": build_depot, "trap": build_trap, "bomb": build_bomb,
-                "uboat": build_uboat, "railbridge": build_railbridge, "gun": build_gun, "plant": build_plant}
+                "uboat": build_uboat, "railbridge": build_railbridge, "gun": build_gun, "plant": build_plant, "train": build_train}
     sc, _ = open_or_build(subject, blend_dir, builders[subject])
     render_still(sc, out_dir, subject, subject)
 

@@ -33,7 +33,7 @@ expansion. On a 64K machine the loader says so and returns to BASIC.
 | V | pin the vision cone of the guard under the cursor (pointing at a guard shows it too) |
 | Esc | back to the title menu |
 
-The title menu lists these shortcuts too. Keys 1 to 6 on the menu pick the
+The title menu lists these shortcuts too. Keys 1 to 7 on the menu pick the
 mission. Space or Fire opens its briefing (objectives, and what each
 commando's D and G do), and pressing it again starts the mission.
 Accomplishing a mission moves the menu on to the next one.
@@ -101,6 +101,14 @@ The fuel barrels sit in a far corner of the compound, too far from the
 plant for their blast to reach it: the Green Beret has to drag one to the
 plant before the Sniper shoots it. Then get back across the gorge to the
 truck. Squad: Green Beret, Sniper, Spy (abilities as above).
+
+## Mission 7: Night Train
+
+An ammunition train stands on the main line in a station yard, fenced to
+the north and south with one gate in each fence. Blow it up with the
+Sapper's time bomb, or get the Sniper a clear shot at the fuel barrel
+standing beside the middle wagon. Then leave through the south gate for
+the truck. Squad: Sniper, Sapper, Spy (abilities as above).
 
 ## Stealth rules
 
@@ -182,7 +190,7 @@ tests/                   scripted-input scenarios + assertions
 | --- | --- |
 | `&0040-&3EFF` | code, tables, variables |
 | `&3F00-&3FFF` | stack (measured depth is about 30 bytes; tests check a canary) |
-| `&4000-&7FFF` | tiles, font, portraits, texts, the current mission's block, live map, path grids, render caches. Paged over by bank 4 (Green Beret, guard, cursor, effects), 5 (Marine, Sniper, menu music, packed maps 5-6) or 6 (Sapper, Spy, packed maps 1-4) while blitting, and by bank 7 (title banner, mission blocks) when the menu or a mission loads |
+| `&4000-&7FFF` | tiles, font, portraits, texts, the current mission's block, live map, path grids, render caches. Paged over by bank 4 (Green Beret, guard, cursor, effects), 5 (Marine, Sniper, menu music, packed maps 5-6) or 6 (Sapper, Spy, packed maps 1-4) while blitting, and by bank 7 (title banner, mission blocks, packed map 7) when the menu or a mission loads |
 | `&8000-&BFFF` | screen buffer B |
 | `&C000-&FFFF` | screen buffer A |
 
@@ -198,14 +206,15 @@ sheets it writes are committed, so `./build.sh` doesn't need either tool.
 
 | Source | Contents |
 | --- | --- |
-| `assets/blender/*.blend` | operatives and sentry (posed by object name), radio tower, pine, rock, barrel, explosion frames, truck, HUD portrait busts, title banner |
+| `assets/blender/*.blend` | chibi operatives and sentry (big heads, shiny eyes; posed by object name), radio tower, pine, rock, barrel, explosion frames, truck, fuel depot, U-boat, rail bridge, coastal gun, heavy water plant, ammunition train, HUD portrait busts, title banner (Arial Black logo with an even outline) |
 | `assets/aseprite/terrain.aseprite` | 8×8 terrain, building and HUD tiles; the prop cells hold the ground the Blender props are composited onto |
 | `assets/aseprite/font.aseprite` | 4×8 HUD font |
 | `assets/aseprite/cursor.aseprite` | crosshair, attack marker, `!`/`?` alerts, decoy icon |
 
 1. **Blender** renders each subject headless (`tools/blender/hfm_render.py`).
    It opens the `.blend` if it exists; the first run builds the low-poly
-   scene from code and saves it. Characters get 7 poses × 5 directions;
+   scene from code and saves it. Characters get 7 poses × 5 directions,
+   with the head tipped back so the chibi face looks up at the camera;
    props and banner are stills. Workbench flat shading with no
    anti-aliasing gives exact palette colours, and the render size includes
    the Mode 0 2:1 squash.

@@ -18,7 +18,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pixelize import pixelize  # noqa: E402
-from sheetlib import BLK, BRED, BYEL, PYEL, RED, SKIN, Canvas, crop, from_png, save_sheet  # noqa: E402
+from sheetlib import BLK, BRED, BYEL, PYEL, RED, SKIN, WHT, Canvas, crop, from_png, save_sheet  # noqa: E402
 from tiles_def import SHEET_COLS, STAMP_GROUND, STAMPS, TILE_NAMES  # noqa: E402
 
 
@@ -36,7 +36,8 @@ def tiles_sheet(terrain_png, renders):
     ground = {i: "snow" for i in range(len(TILE_NAMES))}
     for name, (first, w, h) in STAMPS.items():
         for k in range(w * h):
-            ground[TILE_NAMES.index(first) + k] = STAMP_GROUND.get(name, "snow")
+            g = STAMP_GROUND.get(name, "snow")      # one ground, or one per row
+            ground[TILE_NAMES.index(first) + k] = g if isinstance(g, str) else g[k // w]
     tiles = []
     for i in range(len(TILE_NAMES)):     # cells not painted in Aseprite: plain ground
         c = cell(i)
@@ -69,7 +70,7 @@ def fx_sheet(renders):
 
 
 def portraits(renders):
-    return [render_canvas(os.path.join(renders, "portraits", s + ".png"), priority=(BLK, RED),
+    return [render_canvas(os.path.join(renders, "portraits", s + ".png"), priority=(WHT, BLK, RED),
                           ) for s in ("beret", "marine", "sniper", "sapper", "spy")]
 
 

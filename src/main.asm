@@ -344,7 +344,7 @@ fuzz_rand:
 
 fuzz_keys:
   db KEY_1,KEY_2,KEY_3,KEY_6,KEY_D,KEY_G,KEY_V,KEY_RETURN
-  db KEY_1,KEY_2,KEY_3,KEY_5,KEY_D,KEY_G,KEY_4,KEY_ESC
+  db KEY_7,KEY_2,KEY_3,KEY_5,KEY_D,KEY_G,KEY_4,KEY_ESC
 fuzz_state: dw FUZZ_SEED*2+1           ; odd, distinct per seed
 fuzz_count: dw FUZZ_TICKS
 fuzz_hold:  db 1
@@ -636,7 +636,7 @@ sprites3_end:
   endif
 
 ; ---------------------------------------------------------------------------
-; RAM bank 7 (paged at &4000 when needed): title art, mission blocks
+; RAM bank 7 (paged at &4000 when needed): title art, mission blocks, map 7
 ; ---------------------------------------------------------------------------
   bank 7
   org &4000
@@ -678,7 +678,15 @@ mis_phys_6:                    ; mission 6, assembled for mis_buf
 mis_end_6:
   assert mis_end_6-mis_buf<=MIS_BUF_SIZE
   org mis_phys_6+mis_end_6-mis_buf
-  ds MIS_BUF_SIZE-(mis_end_6-mis_buf)  ; the last copy reads a whole buffer
+mis_phys_7:                    ; mission 7, assembled for mis_buf
+  org mis_buf,mis_phys_7
+  include "missions/mission07.asm"
+mis_end_7:
+  assert mis_end_7-mis_buf<=MIS_BUF_SIZE
+  org mis_phys_7+mis_end_7-mis_buf
+  ds MIS_BUF_SIZE-(mis_end_7-mis_buf)  ; the last copy reads a whole buffer
+MAP07_BANK      equ RAM_BANK7   ; packed maps (tools/map2asm.py)
+  include "mission07_map.asm"   ; generated: build/mission07_map.asm
 bank7_end:
   assert bank7_end<=&8000
 

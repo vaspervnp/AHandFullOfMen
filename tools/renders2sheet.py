@@ -32,7 +32,7 @@ DIRS5 = ["N", "NE", "E", "SE", "S"]
 
 
 def cell(renders, subject, name):
-    rows = pixelize(os.path.join(renders, subject, name + ".png"), priority=(SKIN, BYEL))
+    rows = pixelize(os.path.join(renders, subject, name + ".png"), priority=(BLK, SKIN, BYEL))  # eyes first
     cv = Canvas(12, 16)
     for y, row in enumerate(rows[:16]):
         for x, p in enumerate(row[:12]):

@@ -373,6 +373,40 @@ def check_t52_m6_escape(r):
     assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
 
 
+def check_t53_m7_boot(r):
+    assert r.byte("cur_mission") == 6
+    assert [r.ent(i, "role") for i in range(3)] == [2, ROLE_SAPPER, ROLE_SPY], "wrong squad"
+    guards = sum(1 for i in range(16) if r.ent(i, "type") == 2)
+    assert guards == 7, f"{guards} sentries"
+    assert r.byte("alarm") == 0, "spotted at the start"
+
+
+def check_t54_m7_bomb(r):
+    assert r.byte("target_down") == 1, "the train is still there"
+    assert r.byte("map_buf", 12 * 40 + 14) == TILE_RUBBLE, "train tiles not replaced"
+    assert r.byte("alarm") == 1
+    assert r.byte("bombs") == 0
+
+
+def check_t55_m7_barrel(r):
+    assert r.ent(10, "type") != 4, "the barrel never went off"
+    assert r.byte("target_down") == 1, "the barrel beside the train should take it with it"
+
+
+def check_t56_m7_route_in(r):
+    ok, pos = near(r, 1, 78, 127)
+    assert ok, f"Sapper at {pos}, never got round the train (78,127)"
+
+
+def check_t57_m7_route_out(r):
+    assert r.ent(2, "flags") & EF_BOARDED, f"Spy at {(r.ent(2, 'x'), r.ent(2, 'y'))}, never reached the truck"
+
+
+def check_t58_m7_escape(r):
+    assert r.ent(2, "flags") & EF_BOARDED, "the Spy did not board the truck"
+    assert r.byte("game_over") == 2 and r.byte("end_reason") == 2
+
+
 CHECKS = {k[len("check_"):]: v for k, v in globals().items() if k.startswith("check_")}
 
 

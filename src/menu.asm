@@ -61,7 +61,7 @@ page_clear_row:
   ld de,SCR_W*256+8
   jp fill_rect
 
-; Menu keys while waiting: 1 .. 6 choose the mission.
+; Menu keys while waiting: 1 .. 7 choose the mission.
 menu_keys:
   ld a,KEY_1
   call kbd_hit
@@ -85,8 +85,12 @@ menu_keys:
   jr nz,.pick
   ld a,KEY_6
   call kbd_hit
-  ret z
   ld a,5
+  jr nz,.pick
+  ld a,KEY_7
+  call kbd_hit
+  ret z
+  ld a,6
 .pick:
   cp MISSION_COUNT
   ret nc

@@ -70,11 +70,11 @@
   max `MIS_BUF_SIZE`). `mission_select` copies the block into `mis_buf` and
   the descriptor into `mis` (through `bounce`).
 - Maps: `tools/map2asm.py` packs them (LZ, format in its docstring) into
-  banks 6 (maps 1-4) and 5 (maps 5-6); the bank is the descriptor's
+  banks 6 (maps 1-4), 5 (maps 5-6) and 7 (map 7 on); the bank is the descriptor's
   `MIS_MAP_BANK`. `map_unpack` decodes straight into `map_buf`, paging the
   source bank in per byte, then scatters snow specks with a fixed-seed
   generator (',' and ':' in the map text count as plain snow). New maps
-  can go in bank 7. Commandos have `ent.role` (ROLE_*), set from their spawn
+  go in bank 7. Commandos have `ent.role` (ROLE_*), set from their spawn
   record's route word. Never key behaviour off the entity index.
 - Banks: 4 = beret/guard/cursor/fx, 5 = marine/sniper/music, 6 = sapper/spy,
   7 = title banner + mission blocks; maps in 5 and 6. The &4000 data area is hidden while any of them is
