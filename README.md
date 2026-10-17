@@ -206,9 +206,10 @@ sheets it writes are committed, so `./build.sh` doesn't need either tool.
 
 | Source | Contents |
 | --- | --- |
-| `assets/blender/*.blend` | kawaii style throughout: chibi operatives and sentry (big heads, shiny eyes; posed by object name); round, chubby props, the bigger ones with little faces (candy-striped radio mast, fluffy pines, pebbles, barrel, puffy explosion clouds, truck, fuel tanks, U-boat, rail bridge, coastal gun, heavy water plant, ammunition train, cartoon bomb); HUD portrait busts; title banner (Arial Black logo with an even outline) |
-| `assets/aseprite/terrain.aseprite` | 8×8 terrain, building and HUD tiles (soft snow with sparkles, water with smiling ripples, scalloped snowy banks, glossy ice, pink scalloped roofs, cream walls with round windows, pink fences); the prop cells hold the ground the Blender props are composited onto |
+| `assets/blender/*.blend` | kawaii style throughout: chibi operatives and sentry (big heads, shiny eyes; posed by object name); round, chubby props, the bigger ones with little faces (candy-striped radio mast, fluffy pines, pebbles, barrel, puffy explosion clouds, truck, fuel tanks, U-boat, rail bridge, coastal gun, heavy water plant, ammunition train, cartoon bomb); HUD portrait busts; title banner backdrop (mountains, stars, squad) |
+| `assets/aseprite/terrain.aseprite` | 8×8 terrain, building and HUD tiles (soft snow with sparkles, water with smiling ripples, scalloped snowy banks, glossy ice, pebbly roads, planked bridges, candy-striped gates, orange rail sleepers, soft scorch marks, pink scalloped roofs, cream walls with round windows, pink fences); the prop cells hold the ground the Blender props are composited onto |
 | `assets/aseprite/font.aseprite` | HUD font: rounded 3×6 glyphs in 4×8 cells |
+| `assets/aseprite/logo.aseprite` | the title logo as exact Mode 0 pixel art (160×56, yellow letters, dark red outline, shine and shadow), laid over the banner |
 | `assets/aseprite/cursor.aseprite` | crosshair, attack marker, `!`/`?` alerts in speech bubbles, decoy icon |
 
 1. **Blender** renders each subject headless (`tools/blender/hfm_render.py`).

@@ -44,6 +44,7 @@ mkdir -p build/art assets/renders assets/aseprite assets/blender assets/sprites3
 export_ase assets/aseprite/terrain.aseprite build/art/terrain.png
 export_ase assets/aseprite/font.aseprite assets/ui/font.png
 export_ase assets/aseprite/cursor.aseprite assets/sprites/cursor.png
+export_ase assets/aseprite/logo.aseprite build/art/logo.png
 
 for spec in sprites:beret sprites:guard sprites2:marine sprites2:sniper sprites3:sapper sprites3:spy; do
   folder=${spec%%:*}; name=${spec##*:}

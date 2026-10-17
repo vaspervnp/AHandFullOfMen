@@ -73,16 +73,15 @@ def portraits(renders):
                           ) for s in ("beret", "marine", "sniper", "sapper", "spy")]
 
 
-def title(renders):
+def title(renders, out):
+    """The Blender banner with the pixel-art logo (logo.aseprite, exported
+    to <out>/logo.png by render_assets.sh) on top."""
     cv = render_canvas(os.path.join(renders, "banner", "banner.png"), priority=(BYEL, PYEL))
-    # black outline around the logo (yellow letters + red drop shadow)
-    logo = {BYEL, RED}
-    add = [(x, y) for y in range(cv.h) for x in range(cv.w)
-           if cv.px[y][x] not in logo and any(cv.get(x + dx, y + dy) in logo
-                                              for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
-           and y < 44]                           # not around the characters below
-    for x, y in add:
-        cv.px[y][x] = BLK
+    logo = from_png(os.path.join(out, "logo.png"))
+    for y in range(cv.h):
+        for x in range(cv.w):
+            if logo.px[y][x] is not None:
+                cv.px[y][x] = logo.px[y][x]
     return [cv]
 
 
@@ -94,7 +93,7 @@ def main():
     save_sheet(tiles_sheet(terrain_png, renders), os.path.join(out, "norway.png"), cols=SHEET_COLS)
     save_sheet(fx_sheet(renders), os.path.join(out, "fx.png"))
     save_sheet(portraits(renders), os.path.join(out, "portraits.png"))
-    save_sheet(title(renders), os.path.join(out, "title.png"))
+    save_sheet(title(renders, out), os.path.join(out, "title.png"))
     print(f"assemble_art: norway, fx, portraits, title -> {out}")
 
 

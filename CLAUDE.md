@@ -44,7 +44,7 @@
   CPC's wait states.
 
 ## Art pipeline
-- Art sources: `assets/blender/*.blend` and `assets/aseprite/{terrain,font,cursor}.aseprite`.
+- Art sources: `assets/blender/*.blend` and `assets/aseprite/{terrain,font,cursor,logo}.aseprite`.
   Other `.aseprite` files are generated copies of the sheets. To rebuild a
   Blender subject from code, delete its `.blend`. There's no procedural
   2D art left (gen_art.py is gone).

@@ -645,25 +645,7 @@ def build_banner(sc):
     sc.collection.objects.link(caps)
     caps.data.materials.append(mat("white"))
     box("snowfield", (w * 1.4, 40, 0.1), (0, 0, -0.05), "white")
-    # logo: a heavy round face, yellow with an even red outline (the same text,
-    # fattened, just behind), big enough for Mode 0's wide pixels
-    try:
-        font = bpy.data.fonts.load(r"C:\Windows\Fonts\ariblk.ttf")
-    except RuntimeError:
-        font = None                                  # Blender's own face
-    for text, z in (("A HANDFUL", 3.55), ("OF MEN", 0.6)):
-        for colour, dy, offset in (("red", 0.2, 0.2), ("byel", 0, 0.02)):
-            bpy.ops.object.text_add(location=(0, -4 + dy, z), rotation=(math.radians(90), 0, 0))
-            t = bpy.context.active_object
-            t.data.body = text
-            if font:
-                t.data.font = font
-            t.data.align_x = "CENTER"
-            t.data.size = 3.6
-            t.data.extrude = 0.05
-            t.data.offset = offset
-            t.data.space_character = 1.05
-            t.data.materials.append(mat(colour))
+    # (the logo is pixel art: assets/aseprite/logo.aseprite, added by assemble_art)
     # the squad on the left, a sentry on the right
     for x, subject, yaw in ((-16.8, "beret", 25), (-14.6, "marine", 15), (15.6, "guard", -25)):
         parts = build_character(LOOKS[subject])
