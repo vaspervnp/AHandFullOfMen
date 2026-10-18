@@ -4,6 +4,14 @@ A tactical stealth game for the Amstrad CPC 6128, an 8-bit demake inspired by
 *Commandos: Behind Enemy Lines*. The design brief is in
 [AHandFullOfMen.md](AHandFullOfMen.md).
 
+## Manual
+
+The player's manual is in [docs/](docs/): [English](docs/manual-en.md)
+([PDF](docs/manual-en.pdf)) and [Greek](docs/manual-el.md)
+([PDF](docs/manual-el.pdf)), with screenshots in `docs/img/`. After
+editing a manual, `tools/md2pdf.py docs/manual-en.md` rebuilds its PDF
+(headless Chrome).
+
 ## Build
 
 Requires `rasm` (3.x), `iDSK`, Python 3 with Pillow and the `z80` package,
