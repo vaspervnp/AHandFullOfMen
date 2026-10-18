@@ -12,6 +12,11 @@ The player's manual is in [docs/](docs/): [English](docs/manual-en.md)
 editing a manual, `tools/md2pdf.py docs/manual-en.md` rebuilds its PDF
 (headless Chrome).
 
+[docs/video/tutorial.mp4](docs/video/tutorial.mp4) is a full playthrough of
+the training course, recorded with `tools/autoplay.py --video out.mp4`: a
+bot plays the real game in cpcsim through the keyboard matrix (crosshair,
+scrolling, clicks, keys), and ffmpeg encodes the frames with the AY sound.
+
 ## Build
 
 Requires `rasm` (3.x), `iDSK`, Python 3 with Pillow and the `z80` package,

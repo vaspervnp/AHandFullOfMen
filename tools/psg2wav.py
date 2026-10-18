@@ -46,21 +46,28 @@ def main():
         cpc.keys_down = {k for (s, e, ks) in script if s <= f <= e for k in ks}
         cpc.run_frame()
     log = cpc.psg_log
+    if a.notes:
+        last = [None, None, None]
+        for f, r in enumerate(log):
+            for ch in range(3):
+                p = r[ch * 2] | (r[ch * 2 + 1] & 15) << 8
+                vol = r[8 + ch] & 15
+                on = not r[7] & (1 << ch) and vol and p
+                if on and (last[ch] is None or last[ch][0] != p or
+                           vol > (log[f - 1][8 + ch] & 15 if f else 0)):
+                    print(f"frame {f:5d} ch {'ABC'[ch]} {note_name(p)}")
+                last[ch] = (p, vol > 0) if on else None
+    write_wav(log, a.wav)
+    print(f"psg2wav: {len(log)} frames -> {a.wav}")
+
+
+def synth(log):
+    """AY register snapshots, one per 50 Hz frame -> 16-bit mono samples."""
     out = bytearray()
     phase = [0.0, 0.0, 0.0]
     per_frame = RATE // 50
-    last = [None, None, None]
-    for f, r in enumerate(log):
+    for r in log:
         mixer = r[7]
-        for ch in range(3):
-            p = r[ch * 2] | (r[ch * 2 + 1] & 15) << 8
-            vol = r[8 + ch] & 15
-            on = not mixer & (1 << ch) and vol and p
-            key = (p, vol > 0) if on else None
-            if a.notes and on and (last[ch] is None or last[ch][0] != p or
-                                   (r[8 + ch] & 15) > (log[f - 1][8 + ch] & 15 if f else 0)):
-                print(f"frame {f:5d} ch {'ABC'[ch]} {note_name(p)}")
-            last[ch] = key
         for _ in range(per_frame):
             s = 0.0
             for ch in range(3):
@@ -75,12 +82,15 @@ def main():
                 elif not mixer & (8 << ch):
                     s += amp * random.uniform(-1, 1)
             out += struct.pack("<h", int(max(-1, min(1, s)) * 20000))
-    with wave.open(a.wav, "wb") as w:
+    return bytes(out)
+
+
+def write_wav(log, path):
+    with wave.open(path, "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(RATE)
-        w.writeframes(bytes(out))
-    print(f"psg2wav: {len(log)} frames -> {a.wav}")
+        w.writeframes(synth(log))
 
 
 if __name__ == "__main__":
